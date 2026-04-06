@@ -50,6 +50,7 @@ export const getAllBooking = async (req, res) => {
                 r.price
              FROM bookings b 
              JOIN rooms r ON b.room_id = r.id
+             ORDER BY b.id
             `;
         
         let conditions = [];
@@ -234,3 +235,66 @@ export const deleteBooking = async (req, res) => {
 
 
 };
+
+
+//bookings per month
+export const getBookingsPerMonth = async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT
+                EXTRACT(MONTH FROM check_in) AS month
+                COUNT (*) AS total
+                FROM bookings
+                GROUP BY month
+                ORDER BY month`
+        );
+        res.json(result.rows);
+    } catch (err) {
+        res.json({ error: err.message });
+    
+    }
+};
+
+//revenue per month
+export const getMonthlyRevenue = async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT
+                EXTRACT(MONTH FROM check_in) AS month,
+                SUM(
+                (b.check_out - b.check_in) * r.price
+                ) AS revenue
+                 FROM bookings b
+                 JOIN rooms r ON b.room_id = r.id
+                 WHEERE b.status = 'completed'
+                 GROUP BY month
+                 ORDER BY month
+            `)
+
+            res.json(result.rows);
+    } catch (err) {
+        res.json({error: err.message});
+    }
+};
+
+//get top rooms in month
+export const getTopRooms = async (req,res) => {
+    try {
+        const result = await pool.query(
+            `SELECT
+                r.room_number,
+                COUNT (*) AS total_bookings
+                FROM bookings b
+                JOIN rooms r ON b.room_id = r.id
+                GROUP BY r.room_number
+                ORDER BY total_bookings DESC
+                LIMIT 5`
+        );
+        res.json(result.rows);
+
+
+    } catch (err) {
+        res.status(500).json({error: err.message});
+    
+    }
+}

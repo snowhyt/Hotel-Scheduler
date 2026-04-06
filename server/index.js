@@ -13,7 +13,7 @@ dotenv.config();
 
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 
 //middleware
 app.use(cors());
@@ -23,6 +23,7 @@ app.use(express.json());
 app.use("/rooms", roomRoutes);
 app.use("/booking", bookingRoutes);
 app.use("/dashboard", dashboardRoutes);
+app.use("/room_images", express.static("public/room_images"));
 
 //health check
 app.get("/", (req, res) => {

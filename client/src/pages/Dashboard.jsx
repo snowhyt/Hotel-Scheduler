@@ -2,6 +2,7 @@ import {useEffect, useState} from 'react';
 import Card from "../components/Card.jsx";
 import API, { getDashboardStats } from "../services/api.js";
 import TableChart from '../components/TableChart.jsx';
+import RenevueTable from '../components/RenevueTable.jsx';
 
 import { PieChart, Pie, Legend } from 'recharts';
 
@@ -38,7 +39,7 @@ export default function Dashboard() {
         <h1 className='text-2xl font-bold mb-6'>Dashboard</h1>
 
         {/*Stats card */}
-        <div className='grid grid-cols-1 md:grid-cols-4 gap-6'>
+        <div className='grid grid-cols-1 md:grid-cols-4 gap-6 mb-[-20px]'>
         <Card title="Total Bookings" value={stats.total}/>
         <Card title="Confirmed" value={stats.confirmed}/>
         <Card title="Pending" value={stats.pending}/>
@@ -46,17 +47,19 @@ export default function Dashboard() {
         </div>
 
         {/* Chart */}
+        <section className='grid grid-cols-3 md:grid-cols-2 bg-red-400 gap-6'>
+       
         <div className='mt-10 bg-white p-6 rounded-2xl shadow w-fit'>
             <h2 className='text-xl font-bold mb-4'>Booking status</h2>
 
-            <PieChart width={400} height={300}>
+            <PieChart width={500} height={600}>
                 <Pie
                     className='text-sm'
              
                     data={chartData}
                     dataKey = "value"
                     nameKey = "name"
-                    outerRadius={100}
+                    outerRadius={180}
                     label
                 
                  />
@@ -65,7 +68,12 @@ export default function Dashboard() {
 
            
         </div>
+        <div className='grid-rows-1'>
          <TableChart />
+         <RenevueTable />
+        </div>
+
+         </section>
     </div>
   )
 }

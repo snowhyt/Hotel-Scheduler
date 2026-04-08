@@ -5,7 +5,7 @@ export default function RoomCard({ room_number, room_type, price, description, i
 
     
 
-<div className="flex flex-col w-[350px] h-[500px] bg-white block max-w-sm p-6 border border-default-medium rounded-lg shadow-xs">
+<div className="flex-col w-87.5 h-[500px] bg-white block max-w-sm p-6 border border-default-medium rounded-lg shadow-xs">
     <div>
     <a href="#">
         <img className="rounded-md overflow-hidden object-cover w-full h-48 mb-6" src={`http://localhost:3000/room_images/${image_url}`}  alt="" />
@@ -24,29 +24,6 @@ export default function RoomCard({ room_number, room_type, price, description, i
     </div>
    
 </div>
-
-    // <div>
-    //         <div className="max-w-sm rounded overflow-hidden shadow-lg">
-    //             <img className="w-full" src={`http://localhost:3000/room_images/${image_url}`} 
-    //             alt={`${room_number} - ${room_type}`}
-    //             width='100px'
-    //             height='100px'
-    //             />
-    //             <div className="px-6 py-4">
-    //                 <div className="font-bold text-xl mb-2">{room_number} - {room_type}</div>
-    //                 <h3>
-    //                     {price}
-    //                 </h3>
-    //                 <p className="text-gray-700 text-base">
-    //                     {description}
-    //                 </p>
-    //             </div>
-              
-    //         </div>
-
-            
-
-    //     </div>
 
   )
 }

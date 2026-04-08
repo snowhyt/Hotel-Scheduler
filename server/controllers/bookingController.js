@@ -50,7 +50,7 @@ export const getAllBooking = async (req, res) => {
                 r.price
              FROM bookings b 
              JOIN rooms r ON b.room_id = r.id
-             ORDER BY b.id
+             
             `;
         
         let conditions = [];
@@ -242,11 +242,14 @@ export const getBookingsPerMonth = async (req, res) => {
     try {
         const result = await pool.query(
             `SELECT
-                EXTRACT(MONTH FROM check_in) AS month
-                COUNT (*) AS total
+                EXTRACT(MONTH FROM check_in) AS month_num,
+                COUNT(*) FILTER (WHERE status = 'confirmed') AS confirmed,
+                COUNT(*) FILTER (WHERE status = 'cancelled') AS cancelled,
+                COUNT(*) AS total
                 FROM bookings
-                GROUP BY month
-                ORDER BY month`
+                GROUP BY month_num
+                ORDER BY month_num
+                `
         );
         res.json(result.rows);
     } catch (err) {
@@ -266,7 +269,7 @@ export const getMonthlyRevenue = async (req, res) => {
                 ) AS revenue
                  FROM bookings b
                  JOIN rooms r ON b.room_id = r.id
-                 WHEERE b.status = 'completed'
+                 WHERE b.status = 'completed'
                  GROUP BY month
                  ORDER BY month
             `)
@@ -297,4 +300,5 @@ export const getTopRooms = async (req,res) => {
         res.status(500).json({error: err.message});
     
     }
-}
+};
+

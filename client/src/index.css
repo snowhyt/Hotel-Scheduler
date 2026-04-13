@@ -115,3 +115,72 @@ code {
   background: var(--code-bg);
 }
 
+
+
+/* availability calendar */
+/* Add to your global CSS file */
+
+/* Fade in and out animation for error message */
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  10% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  90% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
+.animate-fade-in-out {
+  animation: fadeInOut 3s ease-in-out;
+}
+
+/* Past date styling */
+.past-date-slot {
+  cursor: not-allowed;
+  background-color: #f3f4f6;
+  opacity: 0.5;
+  pointer-events: none; /* Prevents clicking on past dates */
+}
+
+.past-day {
+  background-color: #f9fafb;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* Style for clickable slots */
+.calendar-slot {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.calendar-slot:hover {
+  background-color: rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Weekend styling */
+.weekend-day {
+  background-color: #f9fafb;
+}
+
+/* Disable clicking on past dates in month view */
+.rbc-month-view .rbc-day-bg.past-day {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* But keep existing events clickable even on past dates */
+.rbc-month-view .rbc-event {
+  pointer-events: auto;
+  cursor: pointer;
+}

@@ -8,6 +8,7 @@ import { PieChart, Pie, Legend } from 'recharts';
 
 export default function Dashboard() {
     const [stats, setStats] = useState(null);
+
     
     useEffect(() => {
         fetchStats();
@@ -39,11 +40,12 @@ export default function Dashboard() {
         <h1 className='text-2xl font-bold mb-6'>Dashboard</h1>
 
         {/*Stats card */}
-        <div className='grid grid-cols-1 md:grid-cols-4 gap-6 mb-[-20px]'>
-        <Card title="Total Bookings" value={stats.total}/>
+        <div className='grid grid-cols-1 md:grid-cols-5 gap-6 mb-[-20px]'>
+        <Card title="New Bookings" value={stats.total}/>
         <Card title="Confirmed" value={stats.confirmed}/>
         <Card title="Pending" value={stats.pending}/>
         <Card title="Cancelled" value={stats.cancelled} />
+        <Card title="Upcoming Booking" value="2" />
         </div>
 
         {/* Chart */}
@@ -68,12 +70,13 @@ export default function Dashboard() {
 
            
         </div>
-        <div className='grid-rows-1'>
+        <div className=''>
          <TableChart />
          <RenevueTable />
         </div>
 
          </section>
+        
     </div>
   )
 }

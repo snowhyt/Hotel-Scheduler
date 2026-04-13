@@ -6,7 +6,11 @@ import {
     updateBookingStatus
 } from "../services/api.js";
 
+import Modal from "../components/Modal.jsx";
+import BookingForm from "../components/BookingForm.jsx";
+
 import { toast } from "react-toastify";
+
 
 
 export default function Bookings() {
@@ -15,6 +19,10 @@ export default function Bookings() {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState("");
+
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedBooking, setSelectedBooking] = useState(null);
+
 
 
     useEffect(() => {
@@ -169,7 +177,15 @@ export default function Bookings() {
                                     </button>
 
                                     <button
-                                        onClick={() => navigate(`/booking/edit/${b.id}`)}
+                                        onClick={() =>{
+                                            if(windows.confirm("Are you sure you want to edit this booking?"))
+                                                {
+                                                setSelectedBooking(b);
+                                                setIsModalOpen(true);
+                                                toast.success("Booking edited successfully");
+                                            }
+                                        
+                                    }}
                                         className="bg-purple-500  hover:bg-purple-700 text-white px-2 py-1 rounded m-1"
                                     >
                                         Edit
@@ -208,6 +224,19 @@ export default function Bookings() {
                     </tbody>
                 </table>
             </div>
+
+            <Modal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                title={selectedBooking ? "Edit Booking" : "Create Booking"}>
+
+                <BookingForm
+                booking={selectedBooking}
+                onSuccess={() => {
+                    setIsModalOpen(false);
+                    fetchBookings();
+                }} />
+            </Modal>
 
         </div>
 

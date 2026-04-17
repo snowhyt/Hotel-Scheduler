@@ -27,35 +27,64 @@ export default function Availability() {
     fetchBookings();
   }, []);
 
-  const fetchBookings = async () => {
-    try {
-      const res = await getBookings();
+  // const fetchBookings = async () => {
+  //   try {
+  //     const res = await getBookings();
 
-      if (res.data && Array.isArray(res.data)) {
-        const formatted = res.data.map((b) => ({
-          id: b.id,
-          title: `${b.guest_name} - Room ${b.room_number}`,
-          start: moment(b.check_in).toDate(),
-          end: moment(b.check_out).toDate(),
-          status: b.status,
-          guest_name: b.guest_name,
-          room_id: b.room_id,
-          guest_email: b.guest_email,
-          guest_phonenumber: b.guest_phonenumber,
-          check_in: b.check_in,
-          check_out: b.check_out
-        }));
-        setBookings(formatted);
-      } else {
-        console.error("API did not return an array. Received:", res.data);
-      }
-    } catch (err) {
-      console.error("Error fetching bookings: ", err);
-      toast.error("Failed to fetch bookings");
-    } finally {
-      setLoading(false);
+  //     if (res.data && Array.isArray(res.data)) {
+  //       const formatted = res.data.map((b) => ({
+  //         id: b.id,
+  //         title: `${b.guest_name} - Room ${b.room_number}`,
+  //         start: moment(b.check_in).toDate(),
+  //         end: moment(b.check_out).toDate(),
+  //         status: b.status,
+  //         guest_name: b.guest_name,
+  //         room_id: b.room_id,
+  //         guest_email: b.guest_email,
+  //         guest_phonenumber: b.guest_phonenumber,
+  //         check_in: b.check_in,
+  //         check_out: b.check_out
+  //       }));
+  //       setBookings(formatted);
+  //     } else {
+  //       console.error("API did not return an array. Received:", res.data);
+  //     }
+  //   } catch (err) {
+  //     console.error("Error fetching bookings: ", err);
+  //     toast.error("Failed to fetch bookings");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }
+
+const fetchBookings = async () => {
+  try {
+    const res = await getBookings();
+    
+    if (res.data && Array.isArray(res.data)) {
+      // No need to check and update - backend already did it!
+      const formatted = res.data.map((b) => ({
+        id: b.id,
+        title: `${b.guest_name} - Room ${b.room_number}`,
+        start: moment(b.check_in).toDate(),
+        end: moment(b.check_out).toDate(),
+        status: b.status, // Already updated by backend
+        guest_name: b.guest_name,
+        room_id: b.room_id,
+        guest_email: b.guest_email,
+        guest_phonenumber: b.guest_phonenumber,
+        check_in: b.check_in,
+        check_out: b.check_out
+      }));
+      setBookings(formatted);
     }
+  } catch (err) {
+    console.error("Error fetching bookings: ", err);
+    toast.error("Failed to fetch bookings");
+  } finally {
+    setLoading(false);
   }
+}
 
   // Function to check if date is in the past
   const isPastDate = (date) => {

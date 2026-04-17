@@ -37,4 +37,8 @@ export const addRooms = (data) => API.post("/rooms", data);
 
 export const editRoom = (id, data) => API.patch(`/rooms/edit/${id}`, data);
 
+export const autoCompletePastBookings = (data) => API.patch("/booking/auto-complete", data);
+
+export const getAvailableRooms = () => API.get("/rooms/available");
+
 export default API

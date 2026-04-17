@@ -71,17 +71,17 @@ body {
   box-sizing: border-box;
 }
 
-h1,
+/* h1,
 h2 {
   font-family: var(--heading);
   font-weight: 500;
   color: var(--text-h);
-}
+} */
 
 h1 {
   font-size: 56px;
   letter-spacing: -1.68px;
-  margin: 32px 0;
+  margin: 15px 0;
   @media (max-width: 1024px) {
     font-size: 36px;
     margin: 20px 0;
@@ -115,7 +115,15 @@ code {
   background: var(--code-bg);
 }
 
+hr {
+  background-color: #383838;
+  height: 2px;
+}
 
+.header {
+  text-align: left;
+  padding-bottom: 10px;
+}
 
 /* availability calendar */
 /* Add to your global CSS file */

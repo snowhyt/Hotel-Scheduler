@@ -11,8 +11,6 @@ import BookingForm from "../components/BookingForm.jsx";
 
 import { toast } from "react-toastify";
 
-
-
 export default function Bookings() {
     const navigate = useNavigate();
     const [bookings, setBookings] = useState([]);
@@ -23,51 +21,53 @@ export default function Bookings() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState(null);
 
-
-
     useEffect(() => {
         fetchBookings();
     }, []);
 
     const fetchBookings = async () => {
         try {
+            setLoading(true);
             const res = await getBookings();
+            console.log("Fetched bookings:", res.data); // Debug log
             setBookings(res.data);
-
         } catch (err) {
-            console.error("Error fetchning bookings: ", err);
+            console.error("Error fetching bookings: ", err);
+            toast.error("Failed to fetch bookings");
         } finally {
             setLoading(false);
         }
     };
 
-    //const handleDelete here
+    // Handle delete
     const handleDelete = async (id) => {
         try {
             await deleteBooking(id);
+            toast.success("Booking deleted successfully");
             fetchBookings();
         } catch (err) {
             console.error(err);
+            toast.error("Failed to delete booking");
         }
     };
 
-    //update status
+    // Update status
     const handleStatus = async (id, status) => {
         try {
             await updateBookingStatus(id, status);
+            toast.success(`Booking ${status} successfully`);
             fetchBookings();
-
         } catch (err) {
             console.error(err);
+            toast.error(`Failed to ${status} booking`);
         }
     };
 
-
-    //filter bookings
+    // Filter bookings
     const filteredBookings = bookings.filter((b) => {
         const matchSearch = b.guest_name
-            .toLowerCase()
-            .includes(search.toLowerCase());
+            ?.toLowerCase()
+            .includes(search.toLowerCase()) || false;
 
         const matchStatus = statusFilter
             ? b.status === statusFilter : true;
@@ -76,8 +76,6 @@ export default function Bookings() {
     });
 
     if (loading) return <div className="p-6">Loading...</div>;
-
-
 
     return (
         <div className="p-6">
@@ -90,26 +88,25 @@ export default function Bookings() {
                     placeholder="Search guest"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="border p-2 rounded w-full md:w-1/3" />
+                    className="border p-2 rounded w-full md:w-1/3"
+                />
 
                 <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="text-sm border py-0 px-2 rounded w-full md:w-auto"
+                    className="text-sm border py-2 px-2 rounded w-full md:w-auto"
                 >
                     <option value="">All Status</option>
                     <option value="pending">Pending</option>
                     <option value="confirmed">Confirmed</option>
                     <option value="cancelled">Cancelled</option>
                     <option value="completed">Completed</option>
-
                 </select>
-
             </div>
 
             {/* Table */}
             <div className="overflow-x-auto">
-                <table className="w-full bg-white shadow rounded-xl min-w-200 md:min-w-full">
+                <table className="w-full bg-white shadow rounded-xl">
                     <thead>
                         <tr className="bg-gray-200">
                             <th className="p-3">Guest</th>
@@ -135,82 +132,86 @@ export default function Bookings() {
                                     {new Date(b.check_out).toLocaleString()}
                                 </td>
                                 <td className="p-3 font-bold">
-                                    {b.status}
+                                    <span className={`px-2 py-1 rounded ${
+                                        b.status === 'confirmed' ? 'text-green-500' :
+                                        b.status === 'pending' ? 'text-yellow-500' :
+                                        b.status === 'cancelled' ? 'text-red-500' :
+                                        'text-gray-500'
+                                    }`}>
+                                        {b.status}
+                                    </span>
                                 </td>
 
-                                <td className="text-[12px] p-1">
-
-                                    {/* confirm button */}
+                                <td className="p-1">
+                                    {/* Confirm button */}
                                     <button
-
-
                                         onClick={() => {
                                             if (window.confirm("Are you sure you want to confirm this booking?")) {
                                                 if (b.status === "confirmed") {
                                                     toast.error("Booking is already confirmed");
                                                     return;
                                                 }
+                                                if (b.status === "cancelled") {
+                                                    toast.error("Cannot confirm a cancelled booking");
+                                                    return;
+                                                }
                                                 handleStatus(b.id, "confirmed");
-                                                toast.success("Booking confirmed successfully");
                                             }
-
                                         }}
-                                        //validations
-                                        className="bg-green-500  hover:bg-green-700 text-white px-2 py-1 rounded m-1"
+                                        disabled={b.status !== "pending"}
+                                        className={`bg-blue-500 hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed text-white px-2 py-1 rounded m-1 ${
+                                            (b.status !== "pending") ? 'opacity-50 cursor-not-allowed' : ''
+                                        }`}
                                     >
                                         Confirm
                                     </button>
 
-                                    {/* delete button */}
+                                    {/* Cancel button */}
                                     <button
                                         onClick={() => {
-                                            if (window.confirm("Are you sure you want to delete this booking?")) {
-
-                                                handleDelete(b.id);
-                                                toast.success("Booking deleted successfully");
-                                            }
-                                    }}
-   
-                                        className="bg-red-500  hover:bg-red-700 text-white px-2 py-1 rounded m-1"
-                                    >
-                                        Delete
-                                    </button>
-
-                                    <button
-                                        onClick={() =>{
-                                            if(windows.confirm("Are you sure you want to edit this booking?"))
-                                                {
-                                                setSelectedBooking(b);
-                                                setIsModalOpen(true);
-                                                toast.success("Booking edited successfully");
-                                            }
-                                        
-                                    }}
-                                        className="bg-purple-500  hover:bg-purple-700 text-white px-2 py-1 rounded m-1"
-                                    >
-                                        Edit
-                                    </button>
-
-                                    {/* cancel button */}
-                                    <button
-                                        onClick={() => {
-                                            // validations
                                             if (window.confirm("Are you sure you want to cancel this booking?")) {
                                                 if (b.status === "cancelled") {
                                                     toast.error("Booking is already cancelled");
                                                     return;
                                                 }
+                                                if (b.status === "completed") {
+                                                    toast.error("Cannot cancel a completed booking");
+                                                    return;
+                                                }
                                                 handleStatus(b.id, "cancelled");
-                                                toast.success("Booking cancelled successfully");
                                             }
                                         }}
-                                        className="bg-yellow-500  hover:bg-yellow-700 text-white px-2 py-1 rounded m-1"
+                                        disabled={b.status !== "pending"}
+                                        className={`bg-slate-500 hover:bg-slate-700 disabled:bg-blue-300 disabled:cursor-not-allowed text-white px-2 py-1 rounded m-1 ${
+                                            (b.status === "cancelled" || b.status === "completed") ? 'opacity-50 cursor-not-allowed' : ''
+                                        }`}
                                     >
                                         Cancel
                                     </button>
 
-                                </td>
+                                    {/* Edit button */}
+                                    <button
+                                        onClick={() => {
+                                            setSelectedBooking(b);
+                                            setIsModalOpen(true);
+                                        }}
+                                        className="bg-amber-500 hover:bg-amber-700 text-white px-2 py-1 rounded m-1"
+                                    >
+                                        Edit
+                                    </button>
 
+                                    {/* Delete button */}
+                                    <button
+                                        onClick={() => {
+                                            if (window.confirm("Are you sure you want to delete this booking?")) {
+                                                handleDelete(b.id);
+                                            }
+                                        }}
+                                        className="bg-red-500 hover:bg-red-700 text-white px-2 py-1 rounded m-1"
+                                    >
+                                        Delete
+                                    </button>
+                                </td>
                             </tr>
                         ))}
 
@@ -227,19 +228,21 @@ export default function Bookings() {
 
             <Modal
                 isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                title={selectedBooking ? "Edit Booking" : "Create Booking"}>
-
-                <BookingForm
-                booking={selectedBooking}
-                onSuccess={() => {
+                onClose={() => {
                     setIsModalOpen(false);
-                    fetchBookings();
-                }} />
+                    setSelectedBooking(null);
+                }}
+                title={selectedBooking ? "Edit Booking" : "Create Booking"}
+            >
+                <BookingForm
+                    booking={selectedBooking}
+                    onSuccess={() => {
+                        setIsModalOpen(false);
+                        setSelectedBooking(null);
+                        fetchBookings();
+                    }}
+                />
             </Modal>
-
         </div>
-
-
     );
 }

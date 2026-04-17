@@ -93,7 +93,7 @@ const totalRevenue = revenueData.reduce((sum, month) => sum + month.revenue, 0);
         <h2 className="text-xl font-bold">Monthly Revenue</h2>
         <div className="text-right">
           <p className="text-sm text-gray-500">Total Revenue</p>
-          <p className="text-2xl font-bold text-green-600">
+          <p className="text-2xl font-bold text-blue-500">
             {formatCurrency(totalRevenue)}
           </p>
         </div>

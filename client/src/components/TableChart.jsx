@@ -85,8 +85,10 @@ return (
             <YAxis allowDecimals={false} />
             <Tooltip cursor={{fill: '#f3f4f6'}} />
             <Legend />
-            <Bar dataKey="confirmed" fill="#22c55e" radius={[4, 4, 0, 0]} />
+           
+            <Bar dataKey="confirmed" fill="#3b82f6" radius={[4, 4, 0, 0]} />
             <Bar dataKey="cancelled" fill="#ef4444" radius={[4, 4, 0, 0]} />
+            
           </BarChart>
         </ResponsiveContainer>
       </div>

@@ -1,6 +1,6 @@
 import express from "express";
 import {createBooking, getAllBooking, updateBookingStatus, 
-    getBookingsPerMonth, getMonthlyRevenue, getTopRooms, editBooking, deleteBooking, getBookingByID} from "../controllers/bookingController.js";
+    getBookingsPerMonth, getMonthlyRevenue, getTopRooms, editBooking, deleteBooking, getBookingByID, autoCompletePastBookings} from "../controllers/bookingController.js";
 import dotenv from "dotenv";
 dotenv.config();
 const router = express.Router();
@@ -35,6 +35,9 @@ router.put("/:id", editBooking );
 //DELETE booking
 router.delete("/:id", deleteBooking);
 
+
+//auto-complete status
+router.patch("/auto-complete", autoCompletePastBookings);
 
 
 

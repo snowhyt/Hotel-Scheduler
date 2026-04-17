@@ -3,9 +3,9 @@ import { toast } from "react-toastify";
 import API from "../services/api";
 import RoomCard from "../components/RoomCard.jsx"
 import {
-    getRooms,
-    deleteRoom,
-    addRooms
+  getRooms,
+  deleteRoom,
+  addRooms
 } from "../services/api.js";
 import { useNavigate } from "react-router-dom";
 
@@ -120,56 +120,60 @@ export default function Rooms() {
         onSubmit={handleSubmit}
         className="bg-white p-4 rounded-xl shadow mb-6 flex gap-4 flex-wrap"
       >
-        <input
-          type="text"
-          name="room_number"
-          placeholder="Room Number"
-          value={form.room_number}
-          onChange={handleChange}
-          className="border p-2 rounded"
-        />
+        <div className="p-2 flex gap-5">
 
-        <input
-          type="text"
-          name="room_type"
-          placeholder="Room Type"
-          value={form.room_type}
-          onChange={handleChange}
-          className="border p-2 rounded"
-        />
+          <input
+            type="text"
+            name="room_number"
+            placeholder="Room Number"
+            value={form.room_number}
+            onChange={handleChange}
+            className="border p-2 rounded"
+          />
 
-        <input
-          type="number"
-          name="price"
-          placeholder="Price"
-          value={form.price}
-          onChange={handleChange}
-          className="border p-2 rounded"
-        />
+          <input
+            type="text"
+            name="room_type"
+            placeholder="Room Type"
+            value={form.room_type}
+            onChange={handleChange}
+            className="border p-2 rounded"
+          />
 
+          <input
+            type="number"
+            name="price"
+            placeholder="Price"
+            value={form.price}
+            onChange={handleChange}
+            className="border p-2 rounded"
+          />
 
           <div>
-  
-  <input 
-    className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-           file:mr-4 file:py-2.5 file:px-4
+
+            <input
+              className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+           file:mr-2 file:py-1 file:px-1
            file:rounded-l-lg file:border-0
            file:text-sm file:font-semibold
            file:bg-gray-200 file:text-gray-700
-           hover:file:bg-gray-300 transition-all" 
-    aria-describedby="file_input_help" 
-    id="file_input" 
-    type="file"
-     name="image"
-          onChange={(e) =>
-            setForm({ ...form, image: e.target.files[0] })
-          }
-  />
-  
-  <p className="mt-2 text-xs text-gray-500" id="file_input_help">
-    SVG, PNG, JPG or GIF (MAX. 800x400px).
-  </p>
-</div>
+           hover:file:bg-gray-300 transition-all"
+              aria-describedby="file_input_help"
+              id="file_input"
+              type="file"
+              name="image"
+              onChange={(e) =>
+                setForm({ ...form, image: e.target.files[0] })
+              }
+            />
+
+            <p className=" text-xs text-gray-500" id="file_input_help">
+              SVG, PNG, JPG or GIF (MAX. 800x400px).
+            </p>
+          </div>
+
+        </div>
+
 
 
 
@@ -185,10 +189,10 @@ export default function Rooms() {
 
         <button className="bg-blue-500 text-white px-4 py-2 rounded">
           Add Room
-        </button> 
+        </button>
       </form>
 
- 
+
 
 
       <div className="my-5 inline-flex p-1 bg-neutral-200/50 rounded-lg border border-neutral-300">
@@ -226,59 +230,59 @@ export default function Rooms() {
         </div>
       ) : (
         <div>
-     {/* 📋 ROOMS TABLE */}
-      <div className="w-full overflow-x-auto">
-        <table className="w-full bg-white shadow rounded-xl">
-          <thead>
-            <tr className="bg-gray-200">
-              <th className="p-3">Room #</th>
-              <th className="p-3">Type</th>
-              <th className="p-3">Price</th>
-              <th className="p-3">Description</th>
-              <th className="p-3">Image</th>
-              <th className="p-3">Actions</th>
-            </tr>
-          </thead>
+          {/* 📋 ROOMS TABLE */}
+          <div className="w-full overflow-x-auto">
+            <table className="w-full bg-white shadow rounded-xl">
+              <thead>
+                <tr className="bg-gray-200">
+                  <th className="p-3">Room #</th>
+                  <th className="p-3">Type</th>
+                  <th className="p-3">Price</th>
+                  <th className="p-3">Description</th>
+                  <th className="p-3">Image</th>
+                  <th className="p-3">Actions</th>
+                </tr>
+              </thead>
 
-          <tbody>
-            {rooms.map((room) => (
-              <tr key={room.id} className="border-t">
-                <td className="p-3">{room.room_number}</td>
-                <td className="p-3">{room.room_type}</td>
-                <td className="p-3">₱{room.price}</td>
-                <td className="p-3">{room.description}</td>
-                <td className="p-3">{room.image_url}</td>
+              <tbody>
+                {rooms.map((room) => (
+                  <tr key={room.id} className="border-t">
+                    <td className="p-1">{room.room_number}</td>
+                    <td className="p-1">{room.room_type}</td>
+                    <td className="p-1">₱{room.price}</td>
+                    <td className="p-1">{room.description}</td>
+                    <td className="p-1">{room.image_url}</td>
 
-                <td className="p-3 flex gap-2">
-                  <button
-                    onClick={() => handleDelete(room.id)}
-                    className="bg-red-500 text-white px-2 py-1 rounded"
-                  >
-                    Delete
-                  </button>
+                    <td className="p-1 flex gap-2 justify-center">
+                      <button
+                        onClick={() => handleDelete(room.id)}
+                        className="bg-red-500 hover:bg-red-700 text-white px-2 py-1 rounded"
+                      >
+                        Delete
+                      </button>
 
-                  <button
-                    onClick={() => navigate(`/rooms/edit/${room.id}`)
+                      <button
+                        onClick={() => navigate(`/rooms/edit/${room.id}`)
 
-                    }
-                    className="bg-green-500 text-white px-2 py-1 rounded"
-                  >
-                    Edit
-                  </button>
-                </td>
-              </tr>
-            ))}
+                        }
+                        className="bg-blue-500 hover:bg-blue-700 text-white px-2 py-1 rounded"
+                      >
+                        Edit
+                      </button>
+                    </td>
+                  </tr>
+                ))}
 
-            {rooms.length === 0 && (
-              <tr>
-                <td colSpan="6" className="text-center p-4">
-                  No rooms found
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+                {rooms.length === 0 && (
+                  <tr>
+                    <td colSpan="6" className="text-center p-4">
+                      No rooms found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
 
         </div>
       )};

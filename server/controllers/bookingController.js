@@ -1,4 +1,9 @@
 import pool from "../db.js"
+import moment from "moment";
+
+
+
+
 
 //Create booking
 export const createBooking = async (req, res) => {
@@ -40,8 +45,20 @@ export const createBooking = async (req, res) => {
 export const getAllBooking = async (req, res) => {
     //check for double booking
     try {
-        const {status, room_id, check_in, check_out} =req.query;
+        const { status, room_id, check_in, check_out } = req.query;
 
+        //FIRST set compete to bookings that arent complete and cancelled
+        const today = moment().format('YYYY-MM-DD');
+
+        await pool.query(
+            `UPDATE bookings
+            SET status = 'completed'
+            WHERE check_out < $1
+            AND status NOT IN ('completed', 'cancelled')`,
+            [today]
+        )
+
+        //THEN fetching all bookings with updated statuses
         let query = `
             SELECT 
                 b.*,
@@ -52,24 +69,24 @@ export const getAllBooking = async (req, res) => {
              JOIN rooms r ON b.room_id = r.id
              
             `;
-        
+
         let conditions = [];
         let values = [];
 
         //filter by status
-        if(status) {
+        if (status) {
             values.push(status);
             conditions.push(`b.status = $${values.length}`);
         }
 
         //filter by room
-        if(room_id){
+        if (room_id) {
             values.push(room_id);
             conditions.push(`b.room_id = $${values.length}`);
         }
 
         //filter by date range (overlapping)
-        if(check_in && check_out){
+        if (check_in && check_out) {
             values.push(check_out);
             values.push(check_in);
             conditions.push(`
@@ -78,7 +95,7 @@ export const getAllBooking = async (req, res) => {
         }
 
         //combine conditions
-        if(conditions.length > 0){
+        if (conditions.length > 0) {
             query += " WHERE " + conditions.join(" AND ");
         }
         query += " ORDER BY b.id ";
@@ -98,6 +115,20 @@ export const getBookingByID = async (req, res) => {
 
     try {
         const { id } = req.params;
+
+        // Auto-complete if this specific booking is past
+        const today = moment().format('YYYY-MM-DD');
+        await pool.query(
+       `UPDATE bookings 
+       SET status = 'completed' 
+       WHERE id = $1 
+       AND check_out < $2 
+       AND status NOT IN ('completed', 'cancelled')`,
+            [id, today]
+        );
+
+
+
         const result = await pool.query(
             ` SELECT 
                 b.*,
@@ -110,7 +141,12 @@ export const getBookingByID = async (req, res) => {
             [id]
         );
 
-        res.json(result.rows);
+        if(result.rows.length === 0){
+            return res.status(404).json({
+                message: "Booking not found"
+            });
+        }
+        res.json(result.rows[0]);
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
@@ -137,7 +173,8 @@ export const editBooking = async (req, res) => {
         //prevent from double booking
         const conflict = await pool.query(
             `SELECT * FROM bookings
-            WHERE id != $2
+            WHERE room_id = $1
+            AND id != $2
             AND status IN ('pending', 'confirmed')
             AND check_in < $3
             AND check_out > $4`,
@@ -240,6 +277,19 @@ export const deleteBooking = async (req, res) => {
 //bookings per month
 export const getBookingsPerMonth = async (req, res) => {
     try {
+
+  // First auto-complete past bookings
+    const today = moment().format('YYYY-MM-DD');
+    await pool.query(
+      `UPDATE bookings 
+       SET status = 'completed' 
+       WHERE check_out < $1 
+       AND status NOT IN ('completed', 'cancelled')`,
+      [today]
+    );
+    
+    // Then get the monthly stats
+
         const result = await pool.query(
             `SELECT
                 EXTRACT(MONTH FROM check_in) AS month_num,
@@ -253,14 +303,27 @@ export const getBookingsPerMonth = async (req, res) => {
         );
         res.json(result.rows);
     } catch (err) {
-        res.json({ error: err.message });
-    
+        res.status(500).json({ error: err.message });
+
     }
 };
 
 //revenue per month
 export const getMonthlyRevenue = async (req, res) => {
     try {
+
+            // First auto-complete past bookings
+    const today = moment().format('YYYY-MM-DD');
+    await pool.query(
+      `UPDATE bookings 
+       SET status = 'completed' 
+       WHERE check_out < $1 
+       AND status NOT IN ('completed', 'cancelled')`,
+      [today]
+    );
+    
+    // Then get revenue stats
+
         const result = await pool.query(`
             SELECT
                 EXTRACT(MONTH FROM check_in) AS month,
@@ -274,14 +337,14 @@ export const getMonthlyRevenue = async (req, res) => {
                  ORDER BY month
             `)
 
-            res.json(result.rows);
+        res.json(result.rows);
     } catch (err) {
-        res.json({error: err.message});
+        res.json({ error: err.message });
     }
 };
 
 //get top rooms in month
-export const getTopRooms = async (req,res) => {
+export const getTopRooms = async (req, res) => {
     try {
         const result = await pool.query(
             `SELECT
@@ -297,8 +360,23 @@ export const getTopRooms = async (req,res) => {
 
 
     } catch (err) {
-        res.status(500).json({error: err.message});
-    
+        res.status(500).json({ error: err.message });
+
     }
+};
+
+// Auto-complete all past bookings (can be called by a cron job)
+export const autoCompletePastBookings = async (req, res) => {
+  try {
+    
+    
+    res.json({
+      message: `Auto-completed ${result.rows.length} past bookings`,
+      updatedCount: result.rows.length,
+      updatedBookings: result.rows[0]
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };
 

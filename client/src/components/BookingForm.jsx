@@ -54,6 +54,9 @@ export default function BookingForm({ booking, onSuccess }) {
     });
   };
 
+
+  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);

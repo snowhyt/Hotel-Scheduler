@@ -13,6 +13,7 @@ export const createBooking = (data) => API.post("/booking", data);
 
 export const deleteBooking = (id) => API.delete(`/booking/${id}`);
 
+
 export const updateBookingStatus = (id, status) => API.patch(`/booking/${id}/status`, {status});
 
 //table charts
@@ -40,5 +41,6 @@ export const editRoom = (id, data) => API.patch(`/rooms/edit/${id}`, data);
 export const autoCompletePastBookings = (data) => API.patch("/booking/auto-complete", data);
 
 export const getAvailableRooms = () => API.get("/rooms/available");
+
 
 export default API

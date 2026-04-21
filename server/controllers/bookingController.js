@@ -368,8 +368,7 @@ export const getTopRooms = async (req, res) => {
 // Auto-complete all past bookings (can be called by a cron job)
 export const autoCompletePastBookings = async (req, res) => {
   try {
-    
-    
+        
     res.json({
       message: `Auto-completed ${result.rows.length} past bookings`,
       updatedCount: result.rows.length,
@@ -379,4 +378,6 @@ export const autoCompletePastBookings = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+
 

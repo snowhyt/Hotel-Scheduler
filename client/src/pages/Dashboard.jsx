@@ -7,7 +7,9 @@ import RenevueTable from '../components/RenevueTable.jsx';
 import { PieChart, Pie, Legend } from 'recharts';
 
 export default function Dashboard() {
-    const [stats, setStats] = useState(null);
+    const [stats, setStats] = useState(null);    
+
+    
 
     
     useEffect(() => {
@@ -26,7 +28,7 @@ export default function Dashboard() {
 
     if (!stats) {return <div className='p-6'>Loading...</div>;}
 
-    //F0b100
+    
     const chartData = [
         {name: "Confirmed", value: stats.confirmed, fill: "#3b82f6"},
         {name: "Pending", value: stats.pending, fill: "#f59e0b"},
@@ -44,10 +46,10 @@ export default function Dashboard() {
 
         {/*Stats card */}
         <div className='grid grid-cols-1 md:grid-cols-4 gap-6 mb-[-20px]'>
-        <Card title="In House" value={stats.total}/>
-        <Card title="Expected Arrivals" value={stats.confirmed}/>
-        <Card title="Expected Departures" value={stats.pending}/>
-        <Card title="End of Day" value={stats.cancelled} />
+        <Card title="In House" value={stats.inHouse}/>
+        <Card title="Expected Arrivals" value={stats.expectedArrivals }/>
+        <Card title="Expected Departures" value={stats.expectedDepartures }/>
+        <Card title="End of Day" value={stats.endOfDay } />
         </div>
 
         {/* Chart */}

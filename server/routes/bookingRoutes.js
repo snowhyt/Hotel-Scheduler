@@ -22,7 +22,6 @@ router.get("/revenue-per-month", getMonthlyRevenue);
 router.get("/top-rooms", getTopRooms);
 
 
-
 // GET booking by ID
 router.get("/:id", getBookingByID);
 
@@ -38,6 +37,9 @@ router.delete("/:id", deleteBooking);
 
 //auto-complete status
 router.patch("/auto-complete", autoCompletePastBookings);
+
+
+
 
 
 

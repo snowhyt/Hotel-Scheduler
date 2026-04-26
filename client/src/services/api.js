@@ -13,6 +13,8 @@ export const createBooking = (data) => API.post("/booking", data);
 
 export const deleteBooking = (id) => API.delete(`/booking/${id}`);
 
+export const updateBooking = (id, data) => API.put(`/booking/${id}`, data);
+
 
 export const updateBookingStatus = (id, status) => API.patch(`/booking/${id}/status`, {status});
 

@@ -52,13 +52,14 @@ export default function Dashboard() {
         <Card title="End of Day" value={stats.endOfDay } />
         </div>
 
-        {/* Chart */}
-        <section className='grid grid-cols-3 md:grid-cols-2'>
+        {/* Chart grid grid-cols-3 md:grid-cols-2 */}
+        <section className='flex flex-col-2 sm:flex-col-1 gap-6'>
        
         <div className='mt-10 bg-white p-6 rounded-2xl shadow w-fit'>
             <h2 className='text-xl font-bold mb-4'>Booking status</h2>
 
-            <PieChart width={500} height={600}>
+            <PieChart width={600} height={600}
+            >
                 <Pie
                     className='text-sm'
              
@@ -74,7 +75,7 @@ export default function Dashboard() {
 
            
         </div>
-        <div className=''>
+        <div className='flex-1'>
          <TableChart />
          <RenevueTable />
         </div>

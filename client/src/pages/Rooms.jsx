@@ -9,6 +9,9 @@ import {
 } from "../services/api.js";
 import { useNavigate } from "react-router-dom";
 
+import EditRoom from "./EditRoom.jsx";
+import Modal from "../components/Modal.jsx";
+
 
 
 
@@ -21,6 +24,7 @@ export default function Rooms() {
     price: "",
     description: "",
     image: null,
+    room_capacity: "",
   });
 
 
@@ -28,6 +32,8 @@ export default function Rooms() {
 
 
   const [loading, setLoading] = useState(true);
+  const [selectedRoom, setSelectedRoom] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   useEffect(() => {
     fetchRooms();
@@ -67,8 +73,10 @@ export default function Rooms() {
     formData.append("price", form.price);
     formData.append("description", form.description);
     formData.append("image", form.image);
+    formData.append("room_capacity", form.room_capacity);
 
     try {
+      //add rooms
       await API.post("/rooms", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -76,12 +84,14 @@ export default function Rooms() {
       });
       toast.success("Room added!");
 
+      //reset
       setForm({
         room_number: "",
         room_type: "",
         price: "",
         description: "",
         image: null,
+        room_capacity: "",
       });
 
       e.target.reset(); // Clear the file input visually
@@ -120,7 +130,7 @@ export default function Rooms() {
         onSubmit={handleSubmit}
         className="bg-white p-4 rounded-xl shadow mb-6 flex gap-4 flex-wrap"
       >
-        <div className="p-2 flex gap-5">
+        <div className="p-2 flex gap-4">
 
           <input
             type="text"
@@ -131,20 +141,37 @@ export default function Rooms() {
             className="border p-2 rounded"
           />
 
-          <input
-            type="text"
+            <select 
             name="room_type"
-            placeholder="Room Type"
+            id="room_type"
             value={form.room_type}
             onChange={handleChange}
-            className="border p-2 rounded"
-          />
+             className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="" hidden disabled>Select Room Type</option>
+              <option value="Dome">Dome</option>
+              <option value="Dormitory">Dormitory</option>
+              <option value="Family Room">Family Room</option>
+              <option value="Function Hall">Function Hall</option>
+              <option value="Junior Suites">Junior Suites</option>
+              <option value="Superior Deluxe">Superior Deluxe</option>
+              <option value="Deluxe Double">Deluxe Double</option>
+              <option value="Superior Room">Superior Room</option>
+              <option value="Other">Other</option>
+            </select>
 
           <input
             type="number"
             name="price"
             placeholder="Price"
             value={form.price}
+            onChange={handleChange}
+            className="border p-2 rounded"
+          />
+          <input
+            type="number"
+            name="room_capacity"
+            placeholder="Room Capacity"
+            value={form.room_capacity}
             onChange={handleChange}
             className="border p-2 rounded"
           />
@@ -184,6 +211,7 @@ export default function Rooms() {
           placeholder="Room Description"
           value={form.description}
           onChange={handleChange}
+          rows={5}
           className="border p-2 rounded w-full"
         ></textarea>
 
@@ -238,6 +266,7 @@ export default function Rooms() {
                   <th className="p-3">Room #</th>
                   <th className="p-3">Type</th>
                   <th className="p-3">Price</th>
+                  <th className="p-3">Capacity</th>
                   <th className="p-3">Description</th>
                   <th className="p-3">Image</th>
                   <th className="p-3">Actions</th>
@@ -250,6 +279,7 @@ export default function Rooms() {
                     <td className="p-1">{room.room_number}</td>
                     <td className="p-1">{room.room_type}</td>
                     <td className="p-1">₱{room.price}</td>
+                    <td className="p-1">{room.room_capacity}</td>
                     <td className="p-1">{room.description}</td>
                     <td className="p-1">{room.image_url}</td>
 
@@ -262,9 +292,10 @@ export default function Rooms() {
                       </button>
 
                       <button
-                        onClick={() => navigate(`/rooms/edit/${room.id}`)
-
-                        }
+                        onClick={() => {
+                          setSelectedRoom(room);
+                          setIsModalOpen(true);
+                        }}
                         className="bg-blue-500 hover:bg-blue-700 text-white px-2 py-1 rounded"
                       >
                         Edit
@@ -286,6 +317,25 @@ export default function Rooms() {
 
         </div>
       )};
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose = {() =>{
+          setIsModalOpen(false);
+          setSelectedRoom(false);
+          fetchRooms();
+        }}
+      >
+        <EditRoom
+        room={selectedRoom}
+        onSuccess={() => {
+          setIsModalOpen(false);
+          setSelectedRoom(null);
+          fetchRooms();
+        }}
+        
+        />
+      </Modal>
     </div>
 
 

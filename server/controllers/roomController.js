@@ -11,19 +11,20 @@ export const getRooms = async (req, res) => {
 
 export const addRooms = async (req, res) => {
   try {
+    //multer for image upload
     if (!req.body || Object.keys(req.body).length === 0) {
       return res.status(400).json({ 
         error: "Request body is empty. Ensure you are using Multer middleware on this route." 
       });
     }
 
-    const { room_number, room_type, price, description} = req.body;
+    const { room_number, room_type, price, description, room_capacity} = req.body;
     const image = req.file ? req.file.filename : null;
 
 
     const result = await pool.query(
-      "INSERT INTO rooms (room_number, room_type, price, description, image_url) VALUES ($1,$2,$3,$4,$5) RETURNING *",
-      [room_number, room_type, price, description, image]
+      "INSERT INTO rooms (room_number, room_type, price, description, image_url, room_capacity) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *",
+      [room_number, room_type, price, description, image, room_capacity]
     );
 
     res.json(result.rows[0]);
@@ -105,7 +106,7 @@ export const deleteRoom = async (req,res) => {
 export const editRoom =async (req,res) => {
   try {
     const {id} =req.params;
-    const {room_number, room_type, price, description} =req.body;
+    const {room_number, room_type, price, description, room_capacity} =req.body;
     const image = req.file ? req.file.filename : null;
 
     //check existing room
@@ -125,10 +126,11 @@ export const editRoom =async (req,res) => {
       room_type = $2,
       price = $3,
       description = $4,
-      image_url = $5
-      WHERE id = $6
+      image_url = $5,
+      room_capacity = $6
+      WHERE id = $7
       RETURNING *`,
-      [room_number, room_type, price, description, image, id]
+      [room_number, room_type, price, description, image, room_capacity, id]
     );
 
     res.json({

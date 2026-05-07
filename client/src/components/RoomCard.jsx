@@ -1,29 +1,65 @@
-import React from 'react'
+import React from "react";
 
-export default function RoomCard({ room_number, room_type, price, description, image_url }) {
+export default function RoomCard({
+  id,
+  room_number,
+  room_type,
+  price,
+  description,
+  room_capacity,
+  image_url,
+  onDelete,
+  onEdit,
+}) {
   return (
-
     
+    <div className="flex flex-col h-[450px] w-[280px] bg-white p-4 border rounded-lg shadow text-sm">
 
-<div className="flex-col w-87.5 h-[500px] bg-white block max-w-sm p-6 border border-default-medium rounded-lg shadow-xs">
-    <div>
-    <a href="#">
-        <img className="rounded-md overflow-hidden object-cover w-full h-48 mb-6" src={`http://localhost:3000/room_images/${image_url}`}  alt="" />
-    </a>
-    <a href="#">
-        <h5 className="mt-6 mb-2 text-2xl font-semibold tracking-tight text-heading">
-            {room_number} - {room_type}
-        </h5>
-    </a>
-    <p className="mb-6 text-body">{description}</p>
-    </div>
-    <div className='flex flex-1'></div>
-    <div className='flex gap-4 bg-amber-200 justify-center'>
-        <button className='bg-red-500 text-white px-1 py-1 rounded'>Delete</button>
-        <button className='bg-green-500 text-white px-1 py-1 rounded'>Edit</button>
-    </div>
-   
-</div>
+      {/* Image */}
+      <img
+        className="rounded-md object-cover w-full h-48 mb-3"
+        src={`http://localhost:3000/room_images/${image_url}`}
+        alt="room"
+      />
 
-  )
+      {/* Title */}
+      <h5 className="text-lg font-semibold mb-1">
+        {room_number} - {room_type}
+      </h5>
+
+      {/* Price */}
+      <p className="text-blue-500 font-bold mb-2">
+        ₱{price}
+      </p>
+
+
+      {/* Capacity */}
+      
+      <p className="text-gray-500 pt-2 text-md line-clamp-3">
+        Total Room Capacity: {room_capacity}
+      </p>
+
+      {/* Description */}
+      <p className="text-gray-600 text-sm line-clamp-3">
+        {description}
+      </p>
+
+      {/* Actions */}
+      <div className="mt-auto flex gap-3 justify-center pt-4">
+        <button
+          onClick={() => onDelete(id)}
+          className="bg-red-500 hover:bg-red-700 text-white px-3 py-1 rounded"
+        >
+          Delete
+        </button>
+
+        <button
+          onClick={() => onEdit()}
+          className="bg-blue-500 hover:bg-blue-700 text-white px-3 py-1 rounded"
+        >
+          Edit
+        </button>
+      </div>
+    </div>
+  );
 }

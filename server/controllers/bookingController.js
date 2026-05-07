@@ -70,10 +70,10 @@ export const createBooking = async (req, res) => {
         const price = roomResult.rows[0].price;
         const nights = Math.ceil((check_out - check_in) / (1000 * 60 * 60 * 24));
         const subtotal = nights * price;
-        const tax = 0.1;
+        const tax = 0.1
         const additional_charges = 0;
-        const balance_due = subtotal * (1 + tax) + additional_charges;
-        const total_amount = balance_due + amount_paid;
+        let balance_due = subtotal * (1 + tax) + additional_charges;
+        let total_amount = balance_due + amount_paid;
 
 
 

@@ -103,43 +103,46 @@ export const deleteRoom = async (req,res) => {
 
 };
 
-export const editRoom =async (req,res) => {
-  try {
-    const {id} =req.params;
-    const {room_number, room_type, price, description, room_capacity} =req.body;
-    const image = req.file ? req.file.filename : null;
 
-    //check existing room
+export const editRoom = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { room_number, room_type, price, description, room_capacity } = req.body;
+
+    // check existing room
     const existing = await pool.query(
       `SELECT * FROM rooms WHERE id = $1`,
       [id]
-    
     );
 
-    if(existing.rowCount === 0){
-      return res.status(400).json({message: "Room not found"});
+    if (existing.rowCount === 0) {
+      return res.status(400).json({ message: "Room not found" });
     }
+
+    // ✅ keep old image if no new upload
+    const image = req.file
+      ? req.file.filename
+      : existing.rows[0].image_url;
 
     const result = await pool.query(
       `UPDATE rooms 
-      SET room_number = $1,
-      room_type = $2,
-      price = $3,
-      description = $4,
-      image_url = $5,
-      room_capacity = $6
-      WHERE id = $7
-      RETURNING *`,
+       SET room_number = $1,
+           room_type = $2,
+           price = $3,
+           description = $4,
+           image_url = $5,
+           room_capacity = $6
+       WHERE id = $7
+       RETURNING *`,
       [room_number, room_type, price, description, image, room_capacity, id]
     );
 
     res.json({
       message: "Room updated successfully",
-      room: result.rows[0]
+      room: result.rows[0],
     });
-    
+
   } catch (err) {
-    res.status(400).json({error: err.message});
-  
+    res.status(400).json({ error: err.message });
   }
 };

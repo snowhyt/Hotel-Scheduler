@@ -76,7 +76,7 @@ export default function CreateBooking() {
     // Calculate total price (optional - can be done on backend)
     const selectedRoom = rooms.find(room => room.id === parseInt(form.room_id));
     const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
-    const totalPrice = selectedRoom ? selectedRoom.price * nights : 0;
+    const subTotal = selectedRoom ? selectedRoom.price * nights : 0;
 
     setLoading(true);
 

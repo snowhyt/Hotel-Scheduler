@@ -17,7 +17,7 @@ router.get("/", getRooms);
 router.get("/available", getAvailableRooms);
 router.post("/", upload.single("image"), addRooms);
 router.delete("/:id", deleteRoom);
-router.patch("edit/:id", editRoom);
+router.patch("/edit/:id", upload.single("image"), editRoom);
 
 
 export default router;

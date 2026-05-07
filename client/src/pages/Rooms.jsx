@@ -1,39 +1,29 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import API from "../services/api";
-import RoomCard from "../components/RoomCard.jsx"
-import {
-  getRooms,
-  deleteRoom,
-  addRooms
-} from "../services/api.js";
-import { useNavigate } from "react-router-dom";
-
+import RoomCard from "../components/RoomCard.jsx";
+import { deleteRoom } from "../services/api.js";
 import EditRoom from "./EditRoom.jsx";
 import Modal from "../components/Modal.jsx";
 
-
-
-
 export default function Rooms() {
-  const navigate = useNavigate();
   const [rooms, setRooms] = useState([]);
-  const [form, setForm] = useState({
+  const [view, setView] = useState("table");
+  const [loading, setLoading] = useState(true);
+
+  const [selectedRoom, setSelectedRoom] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const initialForm = {
     room_number: "",
     room_type: "",
     price: "",
     description: "",
     image: null,
     room_capacity: "",
-  });
+  };
 
-
-  const [view, setView] = useState('table'); // 'card' or 'table
-
-
-  const [loading, setLoading] = useState(true);
-  const [selectedRoom, setSelectedRoom] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [form, setForm] = useState(initialForm);
 
   useEffect(() => {
     fetchRooms();
@@ -61,9 +51,8 @@ export default function Rooms() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Perform validations before preparing FormData
     if (!form.room_number || !form.room_type || !form.price || !form.image) {
-      toast.error("All fields including the image are required");
+      toast.error("All fields including image are required");
       return;
     }
 
@@ -72,50 +61,37 @@ export default function Rooms() {
     formData.append("room_type", form.room_type);
     formData.append("price", form.price);
     formData.append("description", form.description);
-    formData.append("image", form.image);
     formData.append("room_capacity", form.room_capacity);
+    formData.append("image", form.image); // ✅ matches multer
 
     try {
-      //add rooms
       await API.post("/rooms", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
+
       toast.success("Room added!");
-
-      //reset
-      setForm({
-        room_number: "",
-        room_type: "",
-        price: "",
-        description: "",
-        image: null,
-        room_capacity: "",
-      });
-
-      e.target.reset(); // Clear the file input visually
+      setForm(initialForm);
+      e.target.reset(); // clears file input
       fetchRooms();
     } catch (err) {
-      console.error("Add Room Error:", err);
-      const message = err.response?.data?.message || "Failed to add room";
-      toast.error(message);
+      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to add room");
     }
   };
 
   // 🗑 Delete room
   const handleDelete = async (id) => {
-
-    if (!window.confirm("Are you sure you want to delete this room?")) {
-      return;
-    }
+    if (!window.confirm("Are you sure you want to delete this room?")) return;
 
     try {
       await deleteRoom(id);
       toast.success("Room deleted!");
       fetchRooms();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Delete failed. There are existing bookings in this room.");
+      toast.error(
+        err.response?.data?.message ||
+          "Delete failed. There are existing bookings in this room."
+      );
     }
   };
 
@@ -128,217 +104,188 @@ export default function Rooms() {
       {/* ➕ ADD ROOM FORM */}
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-4 rounded-xl shadow mb-6 flex gap-4 flex-wrap"
+        className="bg-white p-4 rounded-xl shadow mb-6 flex gap-4 flex-wrap text-sm"
       >
-        <div className="p-2 flex gap-4">
+        <input
+          type="text"
+          name="room_number"
+          placeholder="Room Number"
+          value={form.room_number}
+          onChange={handleChange}
+          className="border p-2 rounded"
+        />
 
-          <input
-            type="text"
-            name="room_number"
-            placeholder="Room Number"
-            value={form.room_number}
-            onChange={handleChange}
-            className="border p-2 rounded"
-          />
+        <select
+          name="room_type"
+          value={form.room_type}
+          onChange={handleChange}
+          className="border rounded p-2"
+        >
+          <option value="" hidden>
+            Select Room Type
+          </option>
+          <option value="Dome">Dome</option>
+          <option value="Dormitory">Dormitory</option>
+          <option value="Family Room">Family Room</option>
+          <option value="Function Hall">Function Hall</option>
+          <option value="Junior Suites">Junior Suites</option>
+          <option value="Superior Deluxe">Superior Deluxe</option>
+          <option value="Deluxe Double">Deluxe Double</option>
+          <option value="Superior Room">Superior Room</option>
+          <option value="Other">Other</option>
+        </select>
 
-            <select 
-            name="room_type"
-            id="room_type"
-            value={form.room_type}
-            onChange={handleChange}
-             className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="" hidden disabled>Select Room Type</option>
-              <option value="Dome">Dome</option>
-              <option value="Dormitory">Dormitory</option>
-              <option value="Family Room">Family Room</option>
-              <option value="Function Hall">Function Hall</option>
-              <option value="Junior Suites">Junior Suites</option>
-              <option value="Superior Deluxe">Superior Deluxe</option>
-              <option value="Deluxe Double">Deluxe Double</option>
-              <option value="Superior Room">Superior Room</option>
-              <option value="Other">Other</option>
-            </select>
+        <input
+          type="number"
+          name="price"
+          placeholder="Price"
+          value={form.price}
+          onChange={handleChange}
+          className="border p-2 rounded"
+        />
 
-          <input
-            type="number"
-            name="price"
-            placeholder="Price"
-            value={form.price}
-            onChange={handleChange}
-            className="border p-2 rounded"
-          />
-          <input
-            type="number"
-            name="room_capacity"
-            placeholder="Room Capacity"
-            value={form.room_capacity}
-            onChange={handleChange}
-            className="border p-2 rounded"
-          />
+        <input
+          type="number"
+          name="room_capacity"
+          placeholder="Capacity"
+          value={form.room_capacity}
+          onChange={handleChange}
+          className="border p-2 rounded"
+        />
 
-          <div>
-
-            <input
-              className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-           file:mr-2 file:py-1 file:px-1
-           file:rounded-l-lg file:border-0
-           file:text-sm file:font-semibold
-           file:bg-gray-200 file:text-gray-700
-           hover:file:bg-gray-300 transition-all"
-              aria-describedby="file_input_help"
-              id="file_input"
-              type="file"
-              name="image"
-              onChange={(e) =>
-                setForm({ ...form, image: e.target.files[0] })
-              }
-            />
-
-            <p className=" text-xs text-gray-500" id="file_input_help">
-              SVG, PNG, JPG or GIF (MAX. 800x400px).
-            </p>
-          </div>
-
-        </div>
-
-
-
-
-
+        <input
+          type="file"
+          name="image"
+          onChange={(e) =>
+            setForm({ ...form, image: e.target.files[0] })
+          }
+          className="border p-2 rounded"
+        />
 
         <textarea
           name="description"
-          placeholder="Room Description"
+          placeholder="Description"
           value={form.description}
           onChange={handleChange}
-          rows={5}
+          rows={3}
           className="border p-2 rounded w-full"
-        ></textarea>
+        />
 
         <button className="bg-blue-500 text-white px-4 py-2 rounded">
           Add Room
         </button>
       </form>
 
-
-
-
-      <div className="my-5 inline-flex p-1 bg-neutral-200/50 rounded-lg border border-neutral-300">
+      {/* VIEW SWITCH */}
+      <div className="my-5 inline-flex p-1 bg-neutral-200 rounded-lg">
         <button
-          onClick={() => setView('table')}
-          className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-all ${view === 'table' ? 'bg-white shadow-sm text-black' : 'text-neutral-500 hover:text-black'
-            }`}
+          onClick={() => setView("table")}
+          className={`px-4 py-2 rounded ${
+            view === "table" ? "bg-white shadow" : ""
+          }`}
         >
           Table
         </button>
         <button
-          onClick={() => setView('card')}
-          className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-all ${view === 'card' ? 'bg-white shadow-sm text-black' : 'text-neutral-500 hover:text-black'
-            }`}
+          onClick={() => setView("card")}
+          className={`px-4 py-2 rounded ${
+            view === "card" ? "bg-white shadow" : ""
+          }`}
         >
           Cards
         </button>
       </div>
 
-      {/* Conditional Rendering */}
-      {view === 'card' ? (
-        <div>
-          <div className="flex gap-3 pt-[20px]">
-            {rooms.map((room) => (
-              <RoomCard
-                key={room.id}
-                room_number={room.room_number}
-                room_type={room.room_type}
-                price={room.price}
-                description={room.description}
-                image_url={room.image_url} />
-
-            ))}
-          </div>
+      {/* VIEW */}
+      {view === "card" ? (
+        <div className="flex gap-3 flex-wrap p-6">
+          {rooms.map((room) => (
+            <RoomCard key={room.id} {...room} />
+          ))}
         </div>
       ) : (
-        <div>
-          {/* 📋 ROOMS TABLE */}
-          <div className="w-full overflow-x-auto">
-            <table className="w-full bg-white shadow rounded-xl">
-              <thead>
-                <tr className="bg-gray-200">
-                  <th className="p-3">Room #</th>
-                  <th className="p-3">Type</th>
-                  <th className="p-3">Price</th>
-                  <th className="p-3">Capacity</th>
-                  <th className="p-3">Description</th>
-                  <th className="p-3">Image</th>
-                  <th className="p-3">Actions</th>
+        <div className="overflow-x-auto">
+          <table className="w-full bg-white shadow rounded-xl text-sm">
+            <thead>
+              <tr className="bg-gray-200">
+                <th className="p-2">Room #</th>
+                <th className="p-2">Type</th>
+                <th className="p-2">Price</th>
+                <th className="p-2">Capacity</th>
+                <th className="p-2">Description</th>
+                <th className="p-2">Image</th>
+                <th className="p-2">Actions</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {rooms.map((room) => (
+                <tr key={room.id} className="border-t">
+                  <td className="p-2">{room.room_number}</td>
+                  <td className="p-2">{room.room_type}</td>
+                  <td className="p-2">₱{room.price}</td>
+                  <td className="p-2">{room.room_capacity}</td>
+                  <td className="p-2">{room.description}</td>
+
+                  <td className="p-2">
+                    <img
+                      src={`http://localhost:3000/room_images/${room.image_url}`}
+                      alt="room"
+                      className="w-16 h-12 object-cover rounded"
+                    />
+                  </td>
+
+                  <td className="p-2 flex gap-2">
+                    <button
+                      onClick={() => handleDelete(room.id)}
+                      className="bg-red-500 text-white px-2 py-1 rounded"
+                    >
+                      Delete
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setSelectedRoom(room);
+                        setIsModalOpen(true);
+                      }}
+                      className="bg-blue-500 text-white px-2 py-1 rounded"
+                    >
+                      Edit
+                    </button>
+                  </td>
                 </tr>
-              </thead>
+              ))}
 
-              <tbody>
-                {rooms.map((room) => (
-                  <tr key={room.id} className="border-t">
-                    <td className="p-1">{room.room_number}</td>
-                    <td className="p-1">{room.room_type}</td>
-                    <td className="p-1">₱{room.price}</td>
-                    <td className="p-1">{room.room_capacity}</td>
-                    <td className="p-1">{room.description}</td>
-                    <td className="p-1">{room.image_url}</td>
-
-                    <td className="p-1 flex gap-2 justify-center">
-                      <button
-                        onClick={() => handleDelete(room.id)}
-                        className="bg-red-500 hover:bg-red-700 text-white px-2 py-1 rounded"
-                      >
-                        Delete
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setSelectedRoom(room);
-                          setIsModalOpen(true);
-                        }}
-                        className="bg-blue-500 hover:bg-blue-700 text-white px-2 py-1 rounded"
-                      >
-                        Edit
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-
-                {rooms.length === 0 && (
-                  <tr>
-                    <td colSpan="6" className="text-center p-4">
-                      No rooms found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
+              {rooms.length === 0 && (
+                <tr>
+                  <td colSpan="7" className="text-center p-4">
+                    No rooms found
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
-      )};
+      )}
 
+      {/* MODAL */}
       <Modal
         isOpen={isModalOpen}
-        onClose = {() =>{
-          setIsModalOpen(false);
-          setSelectedRoom(false);
-          fetchRooms();
-        }}
-      >
-        <EditRoom
-        room={selectedRoom}
-        onSuccess={() => {
+        onClose={() => {
           setIsModalOpen(false);
           setSelectedRoom(null);
-          fetchRooms();
         }}
-        
+        title="Edit Room"
+      >
+        <EditRoom
+          room={selectedRoom}
+          onSuccess={() => {
+            setIsModalOpen(false);
+            setSelectedRoom(null);
+            fetchRooms();
+          }}
         />
       </Modal>
     </div>
-
-
-
   );
 }

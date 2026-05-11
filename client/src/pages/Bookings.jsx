@@ -120,10 +120,10 @@ export default function Bookings() {
             </div>
 
             {/* Table */}
-            <div className="overflow-x-auto">
+            <div className="h-150 overflow-y-auto">
                 <table className="w-full bg-white shadow rounded-xl">
                     <thead>
-                        <tr className="bg-gray-200">
+                        <tr className="bg-gray-200 sticky top-0 z-10">
                             <th className="p-3">Guest</th>
                             <th className="p-3">Room</th>
                             <th className="p-3">Check-in</th>

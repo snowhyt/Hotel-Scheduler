@@ -45,7 +45,7 @@ export default function Dashboard() {
         </div>
 
         {/*Stats card */}
-        <div className='grid grid-cols-1 md:grid-cols-4 gap-6 mb-[-20px]'>
+        <div className='grid grid-cols-1 md:grid-cols-4 gap-6'>
         <Card title="In House" value={stats.inHouse}/>
         <Card title="Expected Arrivals" value={stats.expectedArrivals }/>
         <Card title="Expected Departures" value={stats.expectedDepartures }/>
@@ -53,7 +53,7 @@ export default function Dashboard() {
         </div>
 
         {/* Chart grid grid-cols-3 md:grid-cols-2 */}
-        <section className='flex flex-col-2 sm:flex-col-1 gap-6'>
+        <section className='flex flex-col-2 sm:flex-col-1  gap-6'>
        
         <div className='mt-10 bg-white p-6 rounded-2xl shadow w-fit'>
             <h2 className='text-xl font-bold mb-4'>Booking status</h2>

@@ -44,7 +44,7 @@ const processMonthlyData = (revenue) => {
     const monthlyRevenue = new Array(12).fill(0);
 
     revenue.forEach((r) => {
-        const monthIndex = parseInt(r.month)-1;
+        const monthIndex = parseInt(r.month.split("-")[1])-1;
         const revenue = parseFloat(r.revenue) || 0;
         monthlyRevenue[monthIndex] = revenue;
     });
@@ -57,7 +57,7 @@ const processMonthlyData = (revenue) => {
 
 //current config
 const formatCurrency = (value) => {
-        return new Intl.NumberFormat('en-US', {
+        return new Intl.NumberFormat('en-PH', {
             style: 'currency',
             currency: 'PHP',
             minimumFractionDigits: 2,

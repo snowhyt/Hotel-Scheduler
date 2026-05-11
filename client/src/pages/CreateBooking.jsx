@@ -18,6 +18,7 @@ export default function CreateBooking() {
   const [checkOut, setCheckOut] = useState(null);
   const [loading, setLoading] = useState(false);
 
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -73,11 +74,7 @@ export default function CreateBooking() {
       return;
     }
 
-    // Calculate total price (optional - can be done on backend)
-    const selectedRoom = rooms.find(room => room.id === parseInt(form.room_id));
-    const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
-    const subTotal = selectedRoom ? selectedRoom.price * nights : 0;
-
+  
     setLoading(true);
 
     try {
@@ -124,7 +121,8 @@ export default function CreateBooking() {
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6">Create Booking</h1>
 
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow max-w-xl mx-auto">
+    
+      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow max-w-xl mx-auto ">
         {/* Room Selection */}
         <select
           name="room_id"

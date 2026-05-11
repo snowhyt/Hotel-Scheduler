@@ -12,6 +12,7 @@ export const getDashboardStats = async (req, res) => {
         COUNT(*) FILTER (WHERE CURRENT_DATE >= check_in::DATE AND CURRENT_DATE < check_out::DATE AND status IN ('confirmed', 'pending')) AS inhouse,
         COUNT(*) FILTER (WHERE check_in::DATE != CURRENT_DATE AND check_IN::DATE > CURRENT_DATE AND status IN ('confirmed', 'pending')) AS expectedarrivals,
         COUNT(*) FILTER (WHERE check_out::DATE = CURRENT_DATE AND status IN ('confirmed', 'pending')) AS expecteddepartures
+        
       FROM bookings
     `);
 
@@ -39,3 +40,17 @@ export const getDashboardStats = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+export const getTotalPax = async (req, res) => {
+
+  try {
+    const totalPaxResult =  await pool.query(`
+        SELECT 
+        COUNT total_pax FILTER(WHERE CURRENT_DATE >= check_in::DATE AND CURRENT_DATE < check_out::DATE AND status IN ('confirmed', 'pending'))
+        FROM bookings
+        WHERE status = 'confirmed'
+      `)
+  } catch (error) {
+    
+  }
+}

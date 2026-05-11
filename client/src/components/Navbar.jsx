@@ -8,7 +8,7 @@ import RoomIcon from "../assets/bed.png";
 
 export default function Navbar() {
   return (
-    <div className="bg-gray-800 text-white w-64 h-screen fixed left-0 top-0 flex flex-col shadow-xl">
+    <div className="bg-gray-800 text-white w-52 h-screen fixed left-0 top-0 flex flex-col shadow-xl">
       {/* Fixed width: w-64 = 256px, you can change to w-72 for 288px or w-80 for 320px */}
 
       <div className="w-full h-auto justify-items-center mt-5">

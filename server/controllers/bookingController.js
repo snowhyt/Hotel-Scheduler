@@ -7,10 +7,10 @@ import moment from "moment";
 export const createBooking = async (req, res) => {
     const { room_id, name, email, phone, total_pax, check_in, check_out, amount_paid } = req.body;
     const client = await pool.connect();
-    
+
     const invoice_number = `INV-${new Date().getFullYear()}-${Date.now()}`;
 
-    
+
 
     try {
         // Start transaction
@@ -68,25 +68,38 @@ export const createBooking = async (req, res) => {
             [room_id]
         );
         const price = roomResult.rows[0].price;
-        const nights = Math.ceil((check_out - check_in) / (1000 * 60 * 60 * 24));
+
+        //convert check in out to DATE
+        const check_in_date = new Date(check_in);
+        const check_out_date = new Date(check_out);
+
+
+        const nights = Math.ceil((check_out_date - check_in_date) / (1000 * 60 * 60 * 24));
+
         const subtotal = nights * price;
-        const tax = 0.1
+
+
         const additional_charges = 0;
-        let balance_due = subtotal * (1 + tax) + additional_charges;
-        let total_amount = balance_due + amount_paid;
 
+        let total_amount = subtotal + additional_charges;
+        //this is the tax formula if tax is included on the total amount (bill)
+        let tax = 0.12 * total_amount;
+        let balance_due = total_amount - amount_paid;
 
-
+        let invoice_status = balance_due === 0 ? 'paid' : 'with balance';
 
         // Insert invoice data
         const invoiceResult = await client.query(
             `INSERT INTO invoices (booking_id, amount_paid, status, invoice_number, 
             subtotal, total_amount, balance_due, tax, additional_charges)
-            VALUES ($1, $2, 'pending', $3, $4, $5, $6, $7, $8) RETURNING id`,
-            [booking.id, amount_paid || 0, invoice_number, subtotal, total_amount, balance_due, tax, additional_charges]
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
+            [booking.id, amount_paid || 0, invoice_status, invoice_number, subtotal, total_amount, balance_due, tax, additional_charges]
         );
         const invoice_id = invoiceResult.rows[0].id;
 
+        console.log("Invoice ID:", invoice_id);
+        console.log("Subtotal:", subtotal);
+        console.log("Total Amount:", total_amount);
 
 
         // Link invoice to booking
@@ -233,7 +246,7 @@ export const createBooking = async (req, res) => {
 //             JOIN rooms r ON b.room_id = r.id
 //             JOIN guests g ON b.guest_id = g.id
 //             LEFT JOIN invoices i ON b.invoice_id = i.id
-             
+
 //             `;
 
 //         let conditions = [];
@@ -389,7 +402,7 @@ export const getBookingByID = async (req, res) => {
 //         const { id } = req.params;
 //         const { room_id, name, email, phone, total_pax,
 //              check_in, check_out,status, amount_paid  } = req.body;
-        
+
 //         const client = await pool.connect();
 
 //     try {
@@ -448,7 +461,7 @@ export const getBookingByID = async (req, res) => {
 //         await client.query("COMMIT");
 //         res.json({message: 'Booking updated successfully'});
 
-        
+
 
 
 
@@ -491,8 +504,8 @@ export const getBookingByID = async (req, res) => {
 //         );
 //         const guest = updateGuest.rows[0];
 
-        
-        
+
+
 //         const updateBooking = await client.query(
 //             `UPDATE bookings
 //             SET room_id = $1,
@@ -507,7 +520,7 @@ export const getBookingByID = async (req, res) => {
 //         );
 //         const booking = updateBooking.rows[0];
 
-       
+
 
 
 //         const updateRoom = await client.query(
@@ -522,7 +535,7 @@ export const getBookingByID = async (req, res) => {
 //         const room = updateRoom.rows[0];
 
 
-        
+
 //         const price = roomResult.rows[0].price;
 //         const nights = Math.ceil((new Date(check_out) - new Date(check_in)) 
 //         / (1000 * 60 * 60 * 24));
@@ -555,7 +568,7 @@ export const getBookingByID = async (req, res) => {
 //             invoice_id
 //         });
 
-    
+
 
 
 
@@ -588,40 +601,40 @@ export const getBookingByID = async (req, res) => {
 
 
 export const editBooking = async (req, res) => {
-        const { id } = req.params;
+    const { id } = req.params;
 
-        const { name, email, phone, room_id, check_in, check_out,
-            status,total_amount, amount_paid, balance_due, total_pax
-         } = req.body;
+    const { name, email, phone, room_id, check_in, check_out,
+        status, total_amount, amount_paid, balance_due, total_pax
+    } = req.body;
 
-        const client = await pool.connect();
-   
-        try {
-            await client.query("BEGIN");
-            
-            //update booking
-            const bookingRes = await client.query(
-                `SELECT * FROM bookings WHERE id = $1`,
-                [id]
-            );
-            if (bookingRes.rows.length === 0) {
-                throw new Error("Booking not found");
-            }
-            const booking = bookingRes.rows[0];
+    const client = await pool.connect();
 
-            //update guest
-            await client.query(`
+    try {
+        await client.query("BEGIN");
+
+        //update booking
+        const bookingRes = await client.query(
+            `SELECT * FROM bookings WHERE id = $1`,
+            [id]
+        );
+        if (bookingRes.rows.length === 0) {
+            throw new Error("Booking not found");
+        }
+        const booking = bookingRes.rows[0];
+
+        //update guest
+        await client.query(`
                 UPDATE guests
                 SET name = $1,
                 email = $2,
                 phone = $3
                 WHERE id = $4
             `, [name, email, phone, booking.guest_id]
-                );
+        );
 
-            //update booking
-            await client.query(
-                `UPDATE bookings
+        //update booking
+        await client.query(
+            `UPDATE bookings
                 SET room_id = $1,
                 check_in = $2,
                 check_out = $3,
@@ -629,24 +642,24 @@ export const editBooking = async (req, res) => {
                 total_pax = $5
                 WHERE id = $6
                 `,
-                [room_id, check_in, check_out, status, total_pax, id]
-            
-            );
+            [room_id, check_in, check_out, status, total_pax, id]
 
-            //update invoice
-            await client.query(
-                `UPDATE invoices
+        );
+
+        //update invoice
+        await client.query(
+            `UPDATE invoices
                 SET total_amount = $1,
                 amount_paid = $2,
                 balance_due = $3
                 WHERE booking_id = $4
                 `,
-                [total_amount, amount_paid, balance_due, booking.invoice_id]
-            );
+            [total_amount, amount_paid, balance_due, booking.invoice_id]
+        );
 
-            await client.query("COMMIT");
+        await client.query("COMMIT");
 
-            res.json({ message: "Booking updated successfully" });
+        res.json({ message: "Booking updated successfully" });
 
 
     } catch (err) {
@@ -776,18 +789,41 @@ export const getMonthlyRevenue = async (req, res) => {
 
         // Then get revenue stats
 
+        // const result = await pool.query(`
+        //     SELECT
+        //         EXTRACT(MONTH FROM check_in) AS month,
+        //         SUM(
+        //         (b.check_out - b.check_in) * r.price
+        //         ) AS revenue
+        //          FROM bookings b
+        //          JOIN rooms r ON b.room_id = r.id
+        //          WHERE b.status = 'completed'
+        //          GROUP BY month
+        //          ORDER BY month
+        //     `)
+
         const result = await pool.query(`
             SELECT
-                EXTRACT(MONTH FROM check_in) AS month,
-                SUM(
-                (b.check_out - b.check_in) * r.price
-                ) AS revenue
-                 FROM bookings b
-                 JOIN rooms r ON b.room_id = r.id
-                 WHERE b.status = 'completed'
-                 GROUP BY month
-                 ORDER BY month
-            `)
+            TO_CHAR(b.check_in, 'YYYY-MM') AS month,
+            COALESCE(SUM(i.total_amount), 0) AS revenue
+            FROM bookings b
+            JOIN invoices i ON b.invoice_id = i.id
+            WHERE b.status = 'completed'
+            AND EXTRACT(YEAR FROM b.check_in) = EXTRACT(YEAR FROM CURRENT_DATE)
+            GROUP BY TO_CHAR(b.check_in, 'YYYY-MM')
+            ORDER BY TO_CHAR(b.check_in, 'YYYY-MM')
+
+    `);
+
+
+        //    SELECT
+        //             TO_CHAR(b.check_in, 'YYYY-MM') AS month,
+        //             SUM(i.total_amount) AS revenue
+        //         FROM bookings b
+        //         JOIN invoices i ON b.invoice_id = i.id
+
+        //         GROUP BY month
+        //         ORDER BY month
 
         res.json(result.rows);
     } catch (err) {

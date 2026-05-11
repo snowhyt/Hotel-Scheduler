@@ -22,7 +22,7 @@ function App() {
         <Navbar />
         
         {/* Main content - add margin left to match navbar width (w-64 = 256px) */}
-        <div style={{ marginLeft: '256px' }} className="p-6">
+        <div style={{ marginLeft: '208px' }} className="p-6">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/bookings" element={<Bookings />} />

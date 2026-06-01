@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-    getBookings,
+    getAllBookings,
     deleteBooking,
     updateBookingStatus
 } from "../services/api.js";
@@ -22,7 +22,7 @@ export default function Bookings() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState(null);
 
-    const [viewMode, setViewMode] = useState(null);
+    const [viewMode, setViewMode] = useState(false);
    
 
     useEffect(() => {
@@ -32,7 +32,7 @@ export default function Bookings() {
     const fetchBookings = async () => {
         try {
             setLoading(true);
-            const res = await getBookings();
+            const res = await getAllBookings();
             console.log("Fetched bookings:", res.data); // Debug log
             setBookings(res.data);
         } catch (err) {
@@ -43,27 +43,16 @@ export default function Bookings() {
         }
     };
 
-    // Handle delete
-    const handleDelete = async (id) => {
-        try {
-            await deleteBooking(id);
-            toast.success("Booking deleted successfully");
-            fetchBookings();
-        } catch (err) {
-            console.error(err);
-            toast.error("Failed to delete booking");
-        }
-    };
 
     // Update status
-    const handleStatus = async (id, status) => {
+    const handleStatus = async (id, booking_status) => {
         try {
-            await updateBookingStatus(id, status);
-            toast.success(`Booking ${status} successfully`);
+            await updateBookingStatus(id, booking_status);
+            toast.success(`Booking ${booking_status} successfully`);
             fetchBookings();
         } catch (err) {
             console.error(err);
-            toast.error(`Failed to ${status} booking`);
+            toast.error(`Failed to ${booking_status} booking`);
         }
     };
 
@@ -74,7 +63,7 @@ export default function Bookings() {
             .includes(search.toLowerCase()) || false;
 
         const matchStatus = statusFilter
-            ? b.status === statusFilter : true;
+            ? b.booking_status.toLowerCase() === statusFilter : true;
 
         return matchSearch && matchStatus;
     });
@@ -130,6 +119,7 @@ export default function Bookings() {
                             <th className="p-3">Check-out</th>
                             <th className="p-3">TotalPax</th>
                             <th className="p-3">Status</th>
+                            <th className="p-3">Payment Status</th>
                             <th className="p-3">Actions</th>
                         </tr>
                     </thead>
@@ -152,15 +142,29 @@ export default function Bookings() {
                                     {b.total_pax}
                                 </td>
 
-                                <td className="p-3 font-bold">
+                                <td className="p-3 font-bold uppercase">
                                     <span className={`px-2 py-1 rounded ${
-                                        b.status === 'confirmed' ? 'text-green-500' :
-                                        b.status === 'pending' ? 'text-yellow-500' :
-                                        b.status === 'cancelled' ? 'text-red-500' :
+                                        b.booking_status === 'confirmed' ? 'text-green-500' :
+                                        b.booking_status === 'pending' ? 'text-yellow-500' :
+                                        b.booking_status === 'cancelled' ? 'text-red-500' :
                                         'text-gray-500'
                                     }`}>
-                                        {b.status}
+                                        {b.booking_status}
                                     </span>
+                                </td>
+                                
+                                <td className="p-3 font-bold uppercase">
+                                    <span
+                                        className={`px-2 py-1 rounded ${
+                                        b.invoice_status === 'paid' ? 'text-slate-700' :
+                                        b.invoice_status === 'partial' ? 'text-yellow-500' :
+                                        b.invoice_status === 'unpaid' ? 'text-red-500' :
+                                        'text-gray-500'
+                                            }`}
+                                    >
+                                        {b.invoice_status}
+                                    </span>
+                                   
                                 </td>
                             
 
@@ -169,19 +173,22 @@ export default function Bookings() {
                                     {/* View button */}
                                     <button
                                         onClick={() => {
+                                            setSelectedBooking(b);
+
                                             setViewMode(b);
                                             setIsModalOpen(true);
+
                                         }}
-                                        disabled={b.status !== "pending"}
-                                        className={`bg-blue-500 hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed text-white px-2 py-1 rounded m-1 ${
-                                            (b.status !== "pending") ? 'opacity-50 cursor-not-allowed' : ''
+                                        disabled={b.booking_status !== "pending"}
+                                        className={`bg-blue-700 hover:bg-blue-400 disabled:bg-blue-400 disabled:cursor-not-allowed text-white px-2 py-1 rounded m-1 ${
+                                            (b.booking_status !== "pending") ? 'opacity-50 cursor-not-allowed' : ''
                                         }`}
                                     >
                                        View
                                     </button>
 
                                     {/* Confirm button */}
-                                    <button
+                                    {/* <button
                                         onClick={() => {
                                             if (window.confirm("Are you sure you want to confirm this booking?")) {
                                                 if (b.status === "confirmed") {
@@ -196,31 +203,31 @@ export default function Bookings() {
                                             }
                                         }}
                                         disabled={b.status !== "pending"}
-                                        className={`bg-blue-500 hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed text-white px-2 py-1 rounded m-1 ${
+                                        className={`bg-blue-700 hover:bg-blue-400 disabled:bg-blue-400 disabled:cursor-not-allowed text-white px-2 py-1 rounded m-1 ${
                                             (b.status !== "pending") ? 'opacity-50 cursor-not-allowed' : ''
                                         }`}
                                     >
                                         Confirm
-                                    </button>
+                                    </button> */}
 
                                     {/* Cancel button */}
                                     <button
                                         onClick={() => {
                                             if (window.confirm("Are you sure you want to cancel this booking?")) {
-                                                if (b.status === "cancelled") {
+                                                if (b.booking_status === "cancelled") {
                                                     toast.error("Booking is already cancelled");
                                                     return;
                                                 }
-                                                if (b.status === "completed") {
+                                                if (b.booking_status === "completed") {
                                                     toast.error("Cannot cancel a completed booking");
                                                     return;
                                                 }
                                                 handleStatus(b.id, "cancelled");
                                             }
                                         }}
-                                        disabled={b.status !== "pending"}
-                                        className={`bg-slate-500 hover:bg-slate-700 disabled:bg-blue-300 disabled:cursor-not-allowed text-white px-2 py-1 rounded m-1 ${
-                                            (b.status === "cancelled" || b.status === "completed") ? 'opacity-50 cursor-not-allowed' : ''
+                                        disabled={b.booking_status !== "pending"}
+                                        className={`bg-white hover:bg-red-500 border hover:text-white disabled:bg-red-300 disabled:text-white disabled:cursor-not-allowed px-2 py-1 rounded m-1 ${
+                                            (b.booking_status === "cancelled" || b.booking_status === "completed") ? 'opacity-50 cursor-not-allowed' : ''
                                         }`}
                                     >
                                         Cancel
@@ -232,13 +239,13 @@ export default function Bookings() {
                                             setSelectedBooking(b);
                                             setIsModalOpen(true);
                                         }}
-                                        className="bg-amber-500 hover:bg-amber-700 text-white px-2 py-1 rounded m-1"
+                                        className="bg-slate-700 hover:bg-slate-400 text-white px-2 py-1 rounded m-1"
                                     >
                                         Edit
                                     </button>
 
                                     {/* Delete button */}
-                                    <button
+                                    {/* <button
                                         onClick={() => {
                                             if (window.confirm("Are you sure you want to delete this booking?")) {
                                                 handleDelete(b.id);
@@ -247,14 +254,14 @@ export default function Bookings() {
                                         className="bg-red-500 hover:bg-red-700 text-white px-2 py-1 rounded m-1"
                                     >
                                         Delete
-                                    </button>
+                                    </button> */}
                                 </td>
                             </tr>
                         ))}
 
                         {filteredBookings.length === 0 && (
                             <tr>
-                                <td colSpan="6" className="text-center p-4">
+                                <td colSpan="8" className="text-center p-4">
                                     No bookings found
                                 </td>
                             </tr>

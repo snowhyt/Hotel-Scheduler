@@ -6,7 +6,8 @@ import pool from "./db.js";
 import roomRoutes from "./routes/roomRoutes.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
-
+import serviceRoutes from "./routes/serviceRoutes.js";
+import guestRoutes from "./routes/guestRoutes.js";
 
 dotenv.config();
 
@@ -23,6 +24,8 @@ app.use(express.json());
 app.use("/rooms", roomRoutes);
 app.use("/booking", bookingRoutes);
 app.use("/dashboard", dashboardRoutes);
+app.use("/services", serviceRoutes);
+app.use("/guests", guestRoutes);
 app.use("/room_images", express.static("public/room_images"));
 
 //health check

@@ -44,19 +44,36 @@ export const getAvailableRooms = async (req,res) => {
       });
     }
 
+    // const result = await pool.query(
+    //   `SELECT * FROM rooms
+    //   WHERE id NOT IN (
+    //     SELECT room_id FROM bookings
+    //     WHERE status IN ('pending', 'confirmed')
+    //     AND check_in < $2
+    //     AND check_out > $1 
+    //     )`,
+    //     [check_in, check_out]
+    // );
     const result = await pool.query(
-      `SELECT * FROM rooms
-      WHERE id NOT IN (
-        SELECT room_id FROM bookings
-        WHERE status IN ('pending', 'confirmed')
-        AND check_in < $2
-        AND check_out > $1 
-        )`,
+      `SELECT
+        r.*,
+        
+        EXISTS (
+        SELECT 1
+        FROM bookings b
+        WHERE b.room_id = r.id
+        AND b.booking_status IN ('pending', 'confirmed')
+        AND b.check_in < $2
+        AND b.check_out > $1) AS "isBooked"
+        FROM rooms r
+        `,
         [check_in, check_out]
     );
+
     res.json(result.rows);
   } catch (err) {
-    res.status(400).json({error: err.message});
+    console.error(err.message);
+    res.status(500).json({error: err.message});
     
   }
 };
@@ -69,7 +86,7 @@ export const deleteRoom = async (req,res) => {
     //check if there are sched bookings in selected room
     const check = await pool.query(
       `SELECT * FROM rooms WHERE id = $1
-      AND status IN ('pending', 'confirmed')`,
+      AND is_Active IN ('pending', 'confirmed')`,
       [id]
     );
 

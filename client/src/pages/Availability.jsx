@@ -5,7 +5,7 @@ import moment from 'moment';
 import { toast } from "react-toastify";
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
-import { getBookings } from "../services/api.js";
+import { getAllBookings } from "../services/api.js";
 
 import Modal from "../components/Modal.jsx";
 import BookingForm from '../components/BookingForm.jsx';
@@ -30,7 +30,7 @@ export default function Availability() {
 
 const fetchBookings = async () => {
   try {
-    const res = await getBookings();
+    const res = await getAllBookings();
     
     if (res.data && Array.isArray(res.data)) {
       // No need to check and update - backend already did it!

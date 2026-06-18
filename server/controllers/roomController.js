@@ -18,13 +18,13 @@ export const addRooms = async (req, res) => {
       });
     }
 
-    const { room_number, room_type, price, description, room_capacity} = req.body;
+    const { room_number, room_type, price, description, room_capacity, breakfast_complementary } = req.body;
     const image = req.file ? req.file.filename : null;
 
 
     const result = await pool.query(
-      "INSERT INTO rooms (room_number, room_type, price, description, image_url, room_capacity) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *",
-      [room_number, room_type, price, description, image, room_capacity]
+      "INSERT INTO rooms (room_number, room_type, price, description, image_url, room_capacity, breakfast_complementary) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *",
+      [room_number, room_type, price, description, image, room_capacity, breakfast_complementary]
     );
 
     res.json(result.rows[0]);

@@ -15,7 +15,6 @@ export const deleteBooking = (id) => API.delete(`/booking/${id}`);
 
 export const updateBooking = (id, data) => API.put(`/booking/${id}`, data);
 
-
 export const updateBookingStatus = (id, booking_status) => API.patch(`/booking/${id}/status`, {booking_status});
 
 //table charts
@@ -73,7 +72,7 @@ export const editService = (id, data) => API.patch(`/services/edit/${id}`, data)
 
 
 //invoices API
-export const getInvoices = () => API.get("/invoices");
+export const getAllInvoices = () => API.get("/invoices");
 
 export const getInvoiceById = (id) => API.get(`/invoices/${id}`);
 
@@ -87,7 +86,7 @@ export const deleteInvoice = (id) => API.delete(`/invoices/${id}`);
 
 
 //payments API
-export const getPayments = () => API.get("/payments");
+export const getAllPayments = () => API.get("/payments");
 
 export const getPaymentById = (id) => API.get(`/payments/${id}`);
 

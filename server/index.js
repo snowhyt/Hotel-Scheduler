@@ -8,6 +8,9 @@ import bookingRoutes from "./routes/bookingRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import serviceRoutes from "./routes/serviceRoutes.js";
 import guestRoutes from "./routes/guestRoutes.js";
+import invoiceRoutes from "./routes/invoiceRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
+
 
 dotenv.config();
 
@@ -24,8 +27,10 @@ app.use(express.json());
 app.use("/rooms", roomRoutes);
 app.use("/booking", bookingRoutes);
 app.use("/dashboard", dashboardRoutes);
-app.use("/services", serviceRoutes);
+app.use("/invoices", invoiceRoutes);
 app.use("/guests", guestRoutes);
+app.use("/payments", paymentRoutes);
+app.use("/services", serviceRoutes);
 app.use("/room_images", express.static("public/room_images"));
 
 //health check

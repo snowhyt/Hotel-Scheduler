@@ -93,7 +93,7 @@ const totalRevenue = revenueData.reduce((sum, month) => sum + month.revenue, 0);
         <h2 className="text-xl font-bold">Monthly Revenue</h2>
         <div className="text-right">
           <p className="text-sm text-gray-500">Total Revenue</p>
-          <p className="text-2xl font-bold text-blue-500">
+          <p className="text-2xl font-bold text-blue-700">
             {formatCurrency(totalRevenue)}
           </p>
         </div>
@@ -115,7 +115,7 @@ const totalRevenue = revenueData.reduce((sum, month) => sum + month.revenue, 0);
             <Legend />
             <Bar 
               dataKey="revenue" 
-              fill="#3b82f6" 
+              fill="#1D4ED8" 
               radius={[4, 4, 0, 0]}
               name="Revenue"
             />

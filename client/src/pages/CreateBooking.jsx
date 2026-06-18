@@ -1,7 +1,10 @@
+//CreateBooking
+
+
 import React, { useState, useEffect } from 'react';
 // import DatePicker from "react-datepicker";
 // import "react-datepicker/dist/react-datepicker.css";
-import { createBooking, getRooms, getAllServices, getAvailableRooms } from "../services/api.js";
+import { createBooking, getAllServices, getAvailableRooms } from "../services/api.js";
 import moment from 'moment';
 import { toast } from "react-toastify";
 
@@ -12,7 +15,7 @@ export default function CreateBooking() {
   const [checkIn, setCheckIn] = useState(null);
   const [checkOut, setCheckOut] = useState(null);
   const [earlyCheckIn, setEarlyCheckIn] = useState(null);
-  const [earlyCheckOut, setEarlyCheckOut] = useState(null);
+  
   const [loading, setLoading] = useState(false);
   const [services, setServices] = useState([]);
   const [selectedServices, setSelectedServices] = useState([]);
@@ -32,7 +35,8 @@ export default function CreateBooking() {
   isAddService:     "",
   chargeName:       "",
   chargePrice:      "",
-  breakfast:        "",
+  breakfast1:        "",
+  breakfast2:       "",
   paymentType:      "",
   payment:          "",
   discount:         0,
@@ -65,6 +69,9 @@ const selectedRoom = rooms.find(
   room => room.id === parseInt(form.room_id)
 );
 
+
+
+
 const bookingTotal =
   selectedRoom && checkIn && checkOut
     ? selectedRoom.price *
@@ -94,10 +101,12 @@ const subTotal =
   earlyCheckInFee;
 
   //discounted booking total amount
+
   const grandTotal = subTotal - (subTotal * parseFloat(form.discount || 0));
    
   const requiredDeposit = grandTotal * 0.5;
   const requiredPayment = form.paymentType === "fullpayment" ? grandTotal : requiredDeposit;
+  const balance = form.paymentType === "fullpayment" ? 0 : requiredPayment - parseFloat(form.payment || 0);
 
 
 
@@ -120,7 +129,7 @@ const subTotal =
 
   const handleEarlyCheckInChange = (e) => {
   setIsEarlyCheckIn(e.target.value);
-  if (e.target.value === 'No') {
+  if (e.target.value === 'false') {
     setEarlyCheckIn(null);
     setCheckIn(null);
   }
@@ -132,7 +141,7 @@ const subTotal =
 
     const { name, value } = e.target;
 
-    if (name === "isAddService" && value === "No") {
+    if (name === "isAddService" && value === "false") {
       setSelectedServices([]);
 
       setForm(prev => ({
@@ -181,6 +190,8 @@ const subTotal =
     }
   }, [grandTotal, requiredDeposit, form.paymentType]);
 
+
+
   const fetchServices = async () => {
     try {
       const serviceResult = await getAllServices();
@@ -227,8 +238,6 @@ const handleCheckOutChange = (e) => {
 };
 
 const isValidDate = (d) => d instanceof Date && !isNaN(d);
-
-
 
   const handleSubmit = async (action) => {
 
@@ -332,9 +341,9 @@ if (isEarlyCheckIn === 'Yes') {
       email: form.email || null,
       phone: form.phone,
       address: form.address || null,
-      check_in:       moment(checkIn).format("YYYY-MM-DD HH:mm"),
-      check_out:      moment(checkOut).format("YYYY-MM-DD HH:mm"),
-      total_pax:      Number(form.total_pax || 0) + Number(form.additionalPax || 0),
+      check_in:   moment(checkIn).format("YYYY-MM-DD HH:mm"),
+      check_out:  moment(checkOut).format("YYYY-MM-DD HH:mm"),
+      total_pax:  Number(selectedRoom.room_capacity || 0) + Number(form.additionalPax || 0),
       booking_status: action === "paylater" ? "pending" : "confirmed",
     };
 
@@ -342,20 +351,26 @@ if (isEarlyCheckIn === 'Yes') {
     const invoiceData = {
       room_charge:           bookingTotal,
       custom_charge_name:    form.chargeName || null,
-      custom_charge:         customCharge,
+      custom_charge:         customCharge || 0,
       additional_pax:        Number(form.additionalPax || 0),
       additional_pax_charge: addPaxTotalPrice,
-      services_charge:       totalServices,
-      breakfast_package:     form.breakfast  || null,
+      breakfast_package:     [form.breakfast1, form.breakfast2].filter(Boolean).join(", ") || null,
       early_checkin_fee: earlyCheckInFee,
       subtotal:            subTotal,
       discount:         parseFloat(form.discount || 0),
       grandtotal:          grandTotal,
       amount_paid:           action === "paylater" ? 0 : paymentValue,
+      balance:              Number(balance.toFixed(2) ),
       invoice_status:        action === "paylater"
                                ? "unpaid"
                                : form.paymentType === "fullpayment" ? "paid" : "partial",
-       
+      services_charge: totalServices,
+      services: selectedServices.map(s => ({
+        name: s.name,
+        price: s.price,
+      })),
+
+
     };
 
     // 3. Prepare payment data
@@ -564,9 +579,7 @@ if (isEarlyCheckIn === 'Yes') {
                     {room.room_number} - ₱{room.price}
                     {room.isBooked ? "(Occupied)" : ""}
                   </option>
-                ))
-              }
-
+                ))}
 
             </select>
             
@@ -656,12 +669,80 @@ if (isEarlyCheckIn === 'Yes') {
                 />
               </div>
 
+              <div className='text-left pt-2'>
+                <p className="block text-sm font-medium mb-1">Complementary Breakfast: </p>
+                <span>{selectedRoom ? selectedRoom.breakfast_complementary : " -"}</span>
+  
+              </div>
+          
+
+            {/* #breakfast here */}
 
 
 
+             {selectedRoom?.breakfast_complementary === "1-complementary" && 
+             (
+              
+                <div className='text-left'>
+                <label className="block text-sm font-medium mb-1">Breakfast Package Menu</label>
+                <select
+                  name="breakfast1"
+                  value={form.breakfast1}
+                  onChange={handleChange}
+                  className="w-full mb-1 p-2 border rounded"
+         
+                >
+                  <option value="" >N/A</option>
+                  <option value="Sausage and Egg">Sausage and Egg</option>
+                  <option value="Bacon and Ham">Bacon and Ham</option>
+                  <option value="Hotdog and Cheese">Hotdog and Cheese</option>
 
 
+                </select>
+              </div>
+              
+             )}
+            {/* breakfast 1 */}
+             {selectedRoom?.breakfast_complementary === "2-complementary" && 
+             ( 
+                <div className='text-left pt-2'>
+                <label className="block text-sm font-medium mb-1">Breakfast Package 1</label>
+                <select
+                  name="breakfast1"
+                  value={form.breakfast1}
+                  onChange={handleChange}
+                  className="w-full mb-1 p-2 border rounded"
+         
+                >
+                  <option value="" >N/A</option>
+                  <option value="Sausage and Egg">Sausage and Egg</option>
+                  <option value="Bacon and Ham">Bacon and Ham</option>
+                  <option value="Hotdog and Cheese">Hotdog and Cheese</option>
 
+        {/* breakfast 2 */}
+                </select>
+
+                <div className='text-left pt-2'>
+                  <label className="block text-sm font-medium mb-1">Breakfast Package 2</label>
+                <select
+                  name="breakfast2"
+                  value={form.breakfast2}
+                  onChange={handleChange}
+                  className="w-full mb-1 p-2 border rounded"
+         
+                >
+                  <option value="" >N/A</option>
+                  <option value="Sausage and Egg">Sausage and Egg</option>
+                  <option value="Bacon and Ham">Bacon and Ham</option>
+                  <option value="Hotdog and Cheese">Hotdog and Cheese</option>
+
+
+                </select>
+                </div>
+              </div>
+              )}
+
+{/*       
               <div className='text-left'>
                 <label className="block text-sm font-medium mb-1">Breakfast Package Menu</label>
                 <select
@@ -678,7 +759,7 @@ if (isEarlyCheckIn === 'Yes') {
 
 
                 </select>
-              </div>
+              </div> */}
               <div className='text-sm flex justify-items-start items-center'>
                 <p className='text-left font-medium'>Add Pax: </p>
                 <label className='px-4 py-2 cursor-pointer'>
@@ -686,9 +767,9 @@ if (isEarlyCheckIn === 'Yes') {
                     type="radio"
                     id='Yes'
                     name='isAddPax'
-                    value='true'
+                    value= {true}
                     onChange={handleChange}
-                  />
+                  />  
                   <span className='pl-2'>Yes</span>
                 </label>
 
@@ -697,7 +778,7 @@ if (isEarlyCheckIn === 'Yes') {
                     type="radio"
                     id='No'
                     name='isAddPax'
-                    value='false'
+                  value= {false}
                     onChange={handleChange}
                     checked={!form.isAddPax}
 
@@ -717,8 +798,8 @@ if (isEarlyCheckIn === 'Yes') {
                     value={form.additionalPax}
                     name="additionalPax"
                     min="0"
-                    disabled={form.isAddPax !== 'true'}
-                    className={`w-full p-2 border rounded${form.isAddPax !== 'true' ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : ''}`}
+                    disabled={form.isAddPax !== "true"}
+                    className={`w-full p-2 border rounded${form.isAddPax !== "true" ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : ''}`}
                   />
                 </div>
               
@@ -731,7 +812,7 @@ if (isEarlyCheckIn === 'Yes') {
                     type="radio"
                     id='Yes'
                     name='isAddService'
-                    value='Yes'
+                    value={true}
                     onChange={handleChange}
                     
                   />
@@ -743,7 +824,7 @@ if (isEarlyCheckIn === 'Yes') {
                     type="radio"
                     id='No'
                     name='isAddService'
-                    value='No'
+                    value={false}
                     onChange={handleChange}
                     checked={!form.isAddService}
 
@@ -761,8 +842,8 @@ if (isEarlyCheckIn === 'Yes') {
                     name="service_id"
                     value={form.service_id}
                     onChange={handleChange}
-                    disabled={form.isAddService !== 'Yes'}
-                    className={`w-full p-2 border rounded ${form.isAddService !== 'Yes' ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : ''}`}
+                    disabled={form.isAddService !== "true"}
+                    className={`w-full p-2 border rounded ${form.isAddService !== 'true' ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : ''}`}
                 
 
                   >
@@ -781,21 +862,11 @@ if (isEarlyCheckIn === 'Yes') {
                     className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700 "
                   >Add</button>
 
-
-
-
                 </div>
-
-
-
-
-
-
-
 
               <div>
 
-                {form.isAddService === 'Yes' && (
+                {form.isAddService === "true" && (
                   <div className="">
                     <div className="mt-4">
                       <h3 className="font-semibold mb-2">Selected Services</h3>
@@ -866,6 +937,8 @@ if (isEarlyCheckIn === 'Yes') {
                       (checkOut - checkIn) / (1000 * 60 * 60 * 24)
                     );
                     const total = selectedRoom.price * nights;
+                  
+
 
                     return (
                       <tr className='border-t'>
@@ -912,28 +985,28 @@ if (isEarlyCheckIn === 'Yes') {
 
                 <div className='flex py-1'>
                   <p className='text-left '>Custom Charge: {form.chargeName}</p>
-                  <span className='text-right flex-1 font-medium'>₱{form.chargePrice}</span>
+                  <span className='text-right flex-1 font-medium'>₱{form.chargePrice || 0}.00</span>
                 </div>
-                {form.isAddPax === 'true' &&
+                {form.isAddPax === "true" &&
                   (
                     <div className='flex py-1'>
                       <p>Additional Pax: ({form.additionalPax}pax) </p>
-                      <span className='text-right font-medium flex-1'>₱{addPaxTotalPrice}</span>
+                      <span className='text-right font-medium flex-1'>₱{addPaxTotalPrice}.00</span>
                     </div>
                   )}
 
-                  {form.isAddService === 'Yes' &&
+                  {form.isAddService === "true" &&
                   (
                     <div className='flex py-1'>
                       <p>Additional Services: </p>
-                      <span className='text-right font-medium flex-1'>₱{totalServices}</span>
+                      <span className='text-right font-medium flex-1'>₱{totalServices}.00</span>
                     </div>
                   )}
               </div>
               <hr />
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex justify-between items-center mb-4 pr-2" >
                 <p className="font-medium">Total Amount:</p>
-                <span className='font-bold'>₱{subTotal.toLocaleString()}</span>
+                <span className='font-bold'>₱{subTotal.toLocaleString()}.00</span>
               </div>
 
 
@@ -951,10 +1024,10 @@ if (isEarlyCheckIn === 'Yes') {
                 onChange={handleChange}
                 className='w-full border p-2'
                 >
-                  <option value="0">No discount</option>
-                  <option value=".20">Senior Citizen/PWD Discount - 20% off</option>
-                  <option value=".15">Children Discount - 10% off</option>
-                  <option value=".15">2205 Anniversary Promo! - 15% off</option>
+                  <option value="0.00">No discount</option>
+                  <option value="0.20">Senior Citizen/PWD Discount - 20% off</option>
+                  <option value="0.10">Children Discount - 10% off</option>
+                  <option value="0.15">2205 Anniversary Promo! - 15% off</option>
                 </select>
               </div>
               {/* Payment Method */}
@@ -1023,9 +1096,7 @@ if (isEarlyCheckIn === 'Yes') {
         <button
           type="button"
           disabled={loading}
-          onClick={(e) => 
-            handleSubmit("paynow")
-          }
+          onClick={() => handleSubmit("paynow")}
           className="w-full bg-blue-700 text-white p-2 rounded-lg font-bold hover:bg-blue-400 transition disabled:bg-gray-400 "
         >
           {loading ? "Creating Booking..." : "Proceed to Payment"}

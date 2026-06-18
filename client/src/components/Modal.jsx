@@ -5,7 +5,7 @@ export default function Modal({isOpen, onClose, children, title}) {
 
   return (
        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-lg w-1/2 p-6 relative">
+      <div className="bg-white rounded-xl shadow-lg w-4xl h-220 p-6">
         
         {/* Header */}
         <div className="flex justify-between items-center mb-4">

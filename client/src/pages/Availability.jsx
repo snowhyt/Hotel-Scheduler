@@ -4,7 +4,7 @@ import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import { toast } from "react-toastify";
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-
+import { useNavigate } from "react-router-dom";
 import { getAllBookings } from "../services/api.js";
 
 import Modal from "../components/Modal.jsx";
@@ -27,23 +27,23 @@ export default function Availability() {
     fetchBookings();
   }, []);
 
-
+const navigate = useNavigate();
 const fetchBookings = async () => {
   try {
     const res = await getAllBookings();
     
-    if (res.data && Array.isArray(res.data)) {
+    if (res.data && Array.isArray(res.data)) {  
       // No need to check and update - backend already did it!
       const formatted = res.data.map((b) => ({
         id: b.id,
-        title: `${b.guest_name} - Room ${b.room_number}`,
+        title: `Room ${b.room_number} - ${b.name.length > 10 ? b.name.substring(0, 10) + '...' : b.name}`,
         start: moment(b.check_in).toDate(),
         end: moment(b.check_out).toDate(),
-        status: b.status, // Already updated by backend
-        guest_name: b.guest_name,
+        status: b.booking_status, // Already updated by backend
+       name: b.name,
         room_id: b.room_id,
-        guest_email: b.guest_email,
-        guest_phonenumber: b.guest_phonenumber,
+        email: b.email,
+        phonenumber: b.phonenumber,
         check_in: b.check_in,
         check_out: b.check_out
       }));
@@ -66,57 +66,66 @@ const fetchBookings = async () => {
 
   // Single click on event (booking)
   const handleEventClick = (event) => {
-    console.log("Event clicked:", event);
-    setSelectedBooking(event);
-    setSelectedDateRange(null);
-    setIsModalOpen(true);
+     if (event.status === 'completed') {
+    toast.info("This booking is already completed and cannot be edited.");
+    return;
+  }
+       if (event.status === 'cancelled') {
+    toast.info("This booking is already cancelled and cannot be edited.");
+    return;
+  }
+  console.log("Event clicked:", event);
+  setSelectedBooking(event);
+  setSelectedDateRange(null);
+  setIsModalOpen(true);
+
   }
 
   // Single click on empty slot
   const handleSlotClick = (slotInfo) => {
     console.log("Slot clicked:", slotInfo);
-    
-    let startDate, endDate;
-    
-    // Different views provide different slotInfo structures
-    if (slotInfo.slots && slotInfo.slots.length > 0) {
-      // For Week and Day views - multiple slots selected with time
-      startDate = slotInfo.slots[0];
-      endDate = slotInfo.slots[slotInfo.slots.length - 1];
-      
-      // If same day, add 2 hours as default duration
-      if (moment(startDate).isSame(endDate, 'day')) {
-        endDate = moment(startDate).add(2, 'hours').toDate();
-      }
-    } else if (slotInfo.start) {
-      // For Month view - single day
-      startDate = slotInfo.start;
-      // Default to 1 night stay (check-in to next day)
-      endDate = moment(startDate).add(1, 'day').toDate();
+
+    let selectedDate;
+
+    if(slotInfo.start){
+      selectedDate = slotInfo.start;
+    } else if (slotInfo.slots && slotInfo.length > 0)
+    {
+      selectedDate = slotInfo.slots[0];
+
     } else {
-      // Fallback
-      startDate = new Date();
-      endDate = moment(startDate).add(1, 'day').toDate();
+      selectedDate = new Date();
     }
-    
-    // VALIDATION: Check if the selected start date is in the past
-    if (isPastDate(startDate)) {
-      toast.error("Cannot create bookings for past dates. Please select a future date.");
-      return; // Don't open the modal
-    }
-    
-    // Optional: Check if end date is also not in the past
-    if (isPastDate(endDate) && !moment(endDate).isSame(startDate, 'day')) {
-      toast.error("Cannot create bookings that end in the past. Please select valid dates.");
+
+    //set selected empty slot check-in to 2:00pm
+    const startDate = moment(selectedDate)
+       .hour(14)
+       .minute(0)
+       .second(0)
+       .millisecond(0)
+       .toDate();
+
+
+    const endDate = moment(selectedDate)
+    .add(12, 'hours')
+    .hour(12)
+    .minute(0)
+    .second(0)
+    .millisecond(0)
+    .toDate();
+
+    if(isPastDate(startDate))
+    {
+      toast.error("Cannot create bookings for past dates. Please select a fututre date.");
       return;
     }
-    
+
     const newBookingTemplate = {
       check_in: moment(startDate).format('YYYY-MM-DD HH:mm:ss'),
       check_out: moment(endDate).format('YYYY-MM-DD HH:mm:ss'),
-      guest_name: '',
-      guest_email: '',
-      guest_phonenumber: '',
+      name: '',
+      email: '',
+      phonenumber: '',
       room_id: '',
     };
 
@@ -125,9 +134,75 @@ const fetchBookings = async () => {
     setSelectedBooking(null);
     setSelectedDateRange(newBookingTemplate);
     setIsModalOpen(true);
+
+    toast.success (
+      `Selected date: ${moment(startDate).format('MMMM DD, YYYY')} -`
+    );
+
+
     
-    // Show success toast for valid date selection
-    toast.success(`Selected date: ${moment(startDate).format('MMMM DD, YYYY')}`);
+
+    // console.log("Slot clicked:", slotInfo);
+    
+    // let selectedDate;
+    // let startDate, endDate;
+    
+    // if(slotInfo.start){
+    //   selectedDate = slotInfo.start;
+
+    // }
+
+
+    // // Different views provide different slotInfo structures
+    // if (slotInfo.slots && slotInfo.slots.length > 0) {
+    //   // For Week and Day views - multiple slots selected with time
+    //   startDate = slotInfo.slots[0];
+    //   endDate = slotInfo.slots[slotInfo.slots.length - 1];
+    //   moment()
+    //   // If same day, add 2 hours as default duration
+    //   if (moment(startDate).isSame(endDate, 'day')) {
+    //     endDate = moment(startDate).add(12, 'hours').toDate();
+    //   }
+    // } else if (slotInfo.start) {
+    //   // For Month view - single day
+    //   startDate = slotInfo.start;
+    //   // Default to 1 night stay (check-in to next day)
+    //   endDate = moment(startDate).add(1, 'day').toDate();
+    // } else {
+    //   // Fallback
+    //   startDate = new Date();
+    //   endDate = moment(startDate).add(1, 'day').toDate();
+    // }
+    
+    // // VALIDATION: Check if the selected start date is in the past
+    // if (isPastDate(startDate)) {
+    //   toast.error("Cannot create bookings for past dates. Please select a future date.");
+    //   return; // Don't open the modal
+    // }
+    
+    // // Optional: Check if end date is also not in the past
+    // if (isPastDate(endDate) && !moment(endDate).isSame(startDate, 'day')) {
+    //   toast.error("Cannot create bookings that end in the past. Please select valid dates.");
+    //   return;
+    // }
+    
+    // const newBookingTemplate = {
+    //   check_in: moment(startDate).format('YYYY-MM-DD HH:mm:ss'),
+    //   check_out: moment(endDate).format('YYYY-MM-DD HH:mm:ss'),
+    //   name: '',
+    //   email: '',
+    //   phonenumber: '',
+    //   room_id: '',
+    // };
+
+    // console.log("Creating booking with dates:", newBookingTemplate);
+    
+    // setSelectedBooking(null);
+    // setSelectedDateRange(newBookingTemplate);
+    // setIsModalOpen(true);
+    
+    // // Show success toast for valid date selection
+    // toast.success(`Selected date: ${moment(startDate).format('MMMM DD, YYYY')}`);
   };
 
   const eventPropGetter = (event) => {
@@ -135,19 +210,19 @@ const fetchBookings = async () => {
     
     switch(event.status) {
       case 'confirmed':
-        bgColor = '#22c55e';
+        bgColor = '#1D4ED8';
         break;
       case 'pending':
-        bgColor = '#facc15';
+        bgColor = '#F59E0B';
         break;
       case 'cancelled':
-        bgColor = '#ef4444';
+        bgColor = '#B91C1C';
         break;
       case 'completed':
-        bgColor = '#6b7280';
+        bgColor = '#CBD5E1';
         break;
       default:
-        bgColor = '#3b82f6';
+        bgColor = '#314158';
     }
 
     return {
@@ -221,11 +296,10 @@ const fetchBookings = async () => {
         <div className='flex justify-end'>
         <button
           onClick={() => {
-            setSelectedBooking(null);
-            setSelectedDateRange(null);
-            setIsModalOpen(true);
+            navigate('/create-booking');
+            
           }}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors"
+          className="bg-blue-700 hover:bg-blue-400 text-white px-4 py-2 rounded transition-colors"
         >
           + New Booking
         </button>
@@ -287,6 +361,33 @@ const fetchBookings = async () => {
           
           showAllEvents={true}
         />
+      </div>
+      <div className='flex justify-center mt-4'>
+        <fieldset className="border rounded-xl p-5 mb-2 w-100">
+          <legend className="px-2 text-md">Legend</legend>
+          <div className=' flex gap-3 items-center justify-evenly  mb-2'>
+            <div className='inline-flex gap-2 items-center'>
+                <div className="w-5 h-5 bg-blue-700 rounded"></div>
+                <p>Confirmed</p>
+            </div>
+            <div className='inline-flex gap-2 items-center'>
+                <div className="w-5 h-5 bg-amber-500 rounded"></div>
+                <p>Pending</p>
+            </div>
+             <div className='inline-flex gap-2 items-center'>
+                <div className="w-5 h-5 bg-red-700 rounded"></div>
+                <p>Cancelled</p>
+            </div>
+            <div className='inline-flex gap-2 items-center'>
+                <div className="w-5 h-5 bg-slate-300 rounded"></div>
+                <p>Completed</p>
+            </div>
+              <div className='inline-flex gap-2 items-center'>
+                <div className="w-5 h-5 bg-slate-700 rounded"></div>
+                <p>Default</p>
+            </div>
+          </div>
+        </fieldset>
       </div>
 
       <Modal

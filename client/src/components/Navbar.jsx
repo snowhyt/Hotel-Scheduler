@@ -51,6 +51,13 @@ export default function Navbar() {
               Availability
             </li>
           </Link>
+
+           <Link to="/users">
+            <li className="hover:text-sky-400 py-6 pl-4 rounded transition-colors hover:bg-gray-700 flex flex-row items-center gap-4">
+              <img src={CalendarIcon} alt="bookings_icon" height="auto" width="30px" />
+              User Control
+            </li>
+          </Link>
         </ul>
       </div>
 

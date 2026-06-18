@@ -2,68 +2,44 @@ import pool from "../db.js";
 
 // POST /invoices
 export const createInvoice = async (req, res) => {
-    const { 
-        booking_id,
-        room_charge,
-        custom_charge_name,
-        custom_charge,
-        additional_pax,
-        additional_pax_charge,
-        services_charge,
-        breakfast_package,
-        sub_total,
-        discount_rate,
-        grand_total,
-        payment_type,
-        amount_paid,
-        balance,
-        invoice_status
-    } = req.body;
+const { 
+    booking_id,
+    room_charge,
+    custom_charge_name,
+    custom_charge,
+    additional_pax,
+    additional_pax_charge,
+    services_charge,
+    breakfast_package,
+    subtotal,        // ← was sub_total
+    discount,        // ← was discount_rate
+    grandtotal,      // ← was grand_total
+    payment_type,
+    amount_paid,
+    balance_due,     // ← was balance
+    invoice_status
+} = req.body;
 
     const client = await pool.connect();
 
     try {
         await client.query("BEGIN");
 
-        const result = await client.query(
-            `INSERT INTO invoices (
-                booking_id,
-                room_charge,
-                custom_charge_name,
-                custom_charge,
-                additional_pax,
-                additional_pax_charge,
-                services_charge,
-                breakfast_package,
-                sub_total,
-                discount_rate,
-                grand_total,
-                payment_type,
-                amount_paid,
-                balance,
-                invoice_status,
-                is_void
-            ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, FALSE
-            ) RETURNING *`,
-            [
-                booking_id,
-                room_charge,
-                custom_charge_name || null,
-                custom_charge,
-                additional_pax,
-                additional_pax_charge,
-                services_charge,
-                breakfast_package || null,
-                sub_total,
-                discount_rate,
-                grand_total,
-                payment_type || null,
-                amount_paid,
-                balance,
-                invoice_status
-            ]
-        );
+ const result = await client.query(
+    `INSERT INTO invoices (
+        booking_id, room_charge, custom_charge_name, custom_charge,
+        additional_pax, additional_pax_charge, services_charge,
+        breakfast_package, subtotal, discount, grandtotal,
+        amount_paid, balance_due, invoice_status, is_void
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,FALSE)
+    RETURNING *`,
+    [
+        booking_id, room_charge, custom_charge_name || null, custom_charge,
+        additional_pax, additional_pax_charge, services_charge,
+        breakfast_package || null, subtotal, discount, grandtotal,
+        amount_paid, balance_due, invoice_status
+    ]
+);
 
         await client.query("COMMIT");
 
@@ -108,7 +84,7 @@ export const getAllInvoice = async (req, res) => {
             WHERE i.is_void = FALSE
             ORDER BY i.created_at DESC`
         );
-
+        res.json(result.rows);   
         res.status(200).json({
             message: "Invoices fetched successfully",
             data: result.rows
@@ -176,7 +152,7 @@ export const getInvoiceById = async (req, res) => {
 // PATCH /invoices/:id/status
 export const updateInvoiceStatus = async (req, res) => {
     const { id } = req.params;
-    const { invoice_status, amount_paid, balance } = req.body;
+    const { invoice_status, amount_paid} = req.body;
 
     const client = await pool.connect();
 
@@ -200,13 +176,12 @@ export const updateInvoiceStatus = async (req, res) => {
         const result = await client.query(
             `UPDATE invoices
              SET 
-                invoice_status = $1,
-                amount_paid    = $2,
-                balance        = $3,
-                updated_at     = NOW()
-             WHERE id = $4
+            invoice_status = $1,
+            amount_paid    = $2,
+             balance_due    = grandtotal - $2
+             WHERE id = $3
              RETURNING *`,
-            [invoice_status, amount_paid, balance, id]
+            [invoice_status, amount_paid, id]
         );
 
         await client.query("COMMIT");

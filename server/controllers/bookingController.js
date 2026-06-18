@@ -137,6 +137,16 @@ export const createBooking = async (req,res) => {
                     ]
                 );
             }
+            if(invoice && invoice.services && invoice.services.length > 0){
+                for(const service of invoice.services){
+                    await client.query(
+                        `INSERT INTO booking_services (booking_id, booking_service_name, booking_service_price)
+                         VALUES ($1, $2, $3)
+                        `,
+                        [booking.id, service.name, service.price]
+                    );
+                }
+            }
 
 
           await client.query("COMMIT");
@@ -171,21 +181,60 @@ export const getAllBooking = async (req, res) => {
                 r.room_number,
                 r.room_type,
                 r.price,
+                r.breakfast_complementary,
+                r.room_capacity,
                 g.name as name,
                 g.email as email,
                 g.phone as phone,
+                g.address as address,
+
+                p.payment_method,
+                p.payment_type,
+                p.payment_status,
+                p.reference_number,
+
                 i.id as invoice_id,
+                i.breakfast_package,
+                i.discount,
+                i.room_charge,
+                i.subtotal,
+                i.balance_due,                
+                i.custom_charge_name,
+                i.custom_charge,
                 i.amount_paid,
                 i.invoice_status,
-                i.grandtotal
-               
+                i.grandtotal,
+                i.additional_pax,
+                i.additional_pax_charge,
+                i.services_charge,
+            -- ✅ from payments table
+  
+                
+            --HOW TO COMMENT
+                COALESCE(
+               JSON_AGG(
+                JSON_BUILD_OBJECT(
+                'id', bs.id,
+                'name', bs.booking_service_name,
+                'price', bs.booking_service_price
+                )
+                ) FILTER (WHERE bs.id IS NOT NULL),
+                '[]'
+                
+             ) AS booking_services
             FROM bookings b 
             JOIN rooms r ON b.room_id = r.id
             LEFT JOIN guests g ON b.guest_id = g.id
             LEFT JOIN invoices i ON b.invoice_id = i.id
+            LEFT JOIN payments p ON p.booking_id = b.id
+              AND p.id = (
+                 SELECT MAX(id) FROM payments WHERE booking_id = b.id
+                 )
+            LEFT JOIN booking_services bs ON b.id = bs.booking_id
             WHERE 1=1
         `;
-
+                // split_part(i.breakfast_package, ',', 1) AS breakfast1,
+                // split_part(i.breakfast_package, ',', 2) AS breakfast2,
         let values = [];
 
         if (booking_status) {
@@ -204,7 +253,19 @@ export const getAllBooking = async (req, res) => {
             query += ` AND b.check_in < $${values.length - 1} AND b.check_out > $${values.length}`;
         }
 
+         query += `GROUP BY 
+                    b.id,
+                    r.room_number, r.room_type, r.price, r.breakfast_complementary,
+                    r.room_capacity,
+                    g.name, g.email, g.phone, g.address,
+                    i.id, i.breakfast_package, i.custom_charge_name, i.custom_charge,
+                    i.amount_paid, i.invoice_status, i.grandtotal, i.additional_pax,
+                    i.additional_pax_charge, i.services_charge,
+                    p.payment_method, p.payment_type, p.payment_status, p.reference_number`;
+
         query += " ORDER BY b.id DESC";
+
+       
 
         const result = await pool.query(query, values);
         res.json(result.rows);
@@ -261,7 +322,7 @@ export const editBooking = async (req, res) => {
     const { id } = req.params;
 
     const { name, email, phone, room_id, check_in, check_out,
-        booking_status, grandtotal, amount_paid, balance, total_pax
+        booking_status, grandtotal, amount_paid, total_pax
     } = req.body;
 
     const client = await pool.connect();
@@ -308,10 +369,10 @@ export const editBooking = async (req, res) => {
             `UPDATE invoices
                 SET grandtotal = $1,
                 amount_paid = $2,
-                balance = $3
-                WHERE booking_id = $4
+                balance_due = $1 - $2
+                WHERE booking_id = $3
                 `,
-            [grandtotal, amount_paid, balance, id]
+            [grandtotal, amount_paid, id]
         );
 
         await client.query("COMMIT");

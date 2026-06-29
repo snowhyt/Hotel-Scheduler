@@ -9,12 +9,6 @@ import { PieChart, Pie, Legend } from 'recharts';
 export default function Dashboard() {
     const [stats, setStats] = useState(null);    
 
-    
-
-    
-    useEffect(() => {
-        fetchStats();
-    },[]);
 
     const fetchStats = async () => {
         try {
@@ -25,6 +19,15 @@ export default function Dashboard() {
             
         }
     };
+
+
+
+
+    
+    useEffect(() => {
+        fetchStats();
+    }, []);
+
 
     if (!stats) {return <div className='p-6'>Loading...</div>;}
 
@@ -41,7 +44,7 @@ export default function Dashboard() {
     <div className='p-6 bg-gray-100 min-h-screen '>
         <div className="flex justify-between items-center">
         <h1 className='text-2xl font-bold mb-6'>Dashboard</h1>
-        <p className='text-xl'><b>Friday</b> - 04/17/2026, 5:00 PM</p>
+        <p className='text-3xl'><b>Friday</b> - 04/17/2026, 5:00 PM</p>
         </div>
 
         {/*Stats card */}

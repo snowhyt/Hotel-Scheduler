@@ -1,14 +1,14 @@
 //BookingForm
 
 import React, { useState, useEffect } from 'react';
-import { updateBookingStatus, getAllServices, getAvailableRooms } from '../services/api';
+import { createBooking, updateBookingStatus, getAllServices, getAvailableRooms,  } from '../services/api';
 import moment from 'moment';
 import { toast } from 'react-toastify';
 
-export default function BookingForm({ booking, onSuccess }) {
+export default function BookingForm({ booking, isEditMode, onSuccess }) {
 
 
-  const intialFormData = {
+  const initialForm = {
     room_id: "",
     room_type: "",
     service_id: "",
@@ -38,13 +38,19 @@ export default function BookingForm({ booking, onSuccess }) {
   const [rooms, setRooms] = useState([]);
   const [services, setServices] = useState([]);
   const [selectedServices, setSelectedServices] = useState([]);
-
-  const [form, setForm] = useState(intialFormData);
+  const [form, setForm] = useState(initialForm);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [checkIn, setCheckIn] = useState(null);
   const [checkOut, setCheckOut] = useState(null);
+  const [earlyCheckIn, setEarlyCheckIn] = useState(null);
+  const [isEarlyCheckIn, setIsEarlyCheckIn] = useState('No');
+  const [isExtend, setIsExtend] = useState('No');
 
+console.log("isEditMode:", isEditMode);
+//date now
+const now = new Date();
+now.setHours(0,0,0,0);
 
   //Derived Calculations
   // ── Derived calculations ──────────────────────────────────────
@@ -62,21 +68,45 @@ export default function BookingForm({ booking, onSuccess }) {
     ? selectedRoom.price * Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24))
     : 0;
 
-  const earlyCheckInFee = 0; // Not applicable in edit mode
+const earlyCheckInFee = (() => {
+  const dateToCheck = isEarlyCheckIn === 'Yes' ? earlyCheckIn : checkIn;
+  if (!dateToCheck) return 0;
+  const hours = dateToCheck.getHours();
+  if (hours < 14) {
+    return (14 - hours) * 500;
+  }
+  return 0;
+})();
 
-  const subTotal = bookingTotal + customCharge + totalServices + addPaxTotalPrice;
+//subTotal
+  const subTotal = bookingTotal + customCharge + totalServices + addPaxTotalPrice + earlyCheckInFee;
+
+//discounted booking total amount
+  const grandTotal = subTotal - (subTotal * parseFloat(form.discount || 0));
+  const requiredDeposit = grandTotal * 0.5;
+  const requiredPayment = form.paymentType === "fullpayment" ? grandTotal : requiredDeposit;
+  const balance = form.paymentType === "fullpayment" ? 0 : requiredPayment - parseFloat(form.payment || 0);
 
 
- 
+// async function fetchRooms(ciDate, coDate) {
+//   if (!ciDate || !coDate) return;
+//   try {
+//     const roomResult = await getAvailableRooms(
+//       moment(ciDate).format("YYYY-MM-DD HH:mm"),
+//       moment(coDate).format("YYYY-MM-DD HH:mm")
+//     );
+//     setRooms(roomResult.data);
+//   } catch (error) {
+//     console.error("Error fetchning rooms:", error );
+//     toast.error("Failed to load rooms");
+//   }
+// }
 
-
-
-  // Replace the first useEffect entirely:
-  useEffect(() => {
-    if (checkIn && checkOut) {
-      fetchRooms(checkIn, checkOut);
-    }
-  }, [checkIn, checkOut]);
+// useEffect(() => {
+//   if(checkIn && checkOut){
+//     fetchRooms(checkIn, checkOut);
+//   }
+// }, [checkIn, checkOut])
 
   // ✅ Fix fetchRooms to accept dates as parameters
   const fetchRooms = async (ciDate, coDate) => {
@@ -93,7 +123,17 @@ export default function BookingForm({ booking, onSuccess }) {
     }
   };
 
-  // Fetch Services
+
+
+  // Replace the first useEffect entirely:
+  useEffect(() => {
+    if (checkIn && checkOut) {
+      fetchRooms(checkIn, checkOut); // eslint-disable-line react-hooks/set-state-in-effect
+    }
+  }, [checkIn, checkOut]);
+
+
+  // Fetch Services 
   const fetchServices = async () => {
     try {
       const serviceResult = await getAllServices();
@@ -105,7 +145,7 @@ export default function BookingForm({ booking, onSuccess }) {
   };
 
   useEffect(() => {
-    fetchServices();
+    fetchServices(); //eslint-disable-line react-hooks/set-state-in-effect
   }, []);
 
 
@@ -114,9 +154,10 @@ export default function BookingForm({ booking, onSuccess }) {
   useEffect(() => {
     if (booking) {
       if (booking.booking_services && booking.booking_services.length > 0) {
-        setSelectedServices(booking.booking_services);
+        setSelectedServices(booking.booking_services); //eslint-disable-line react-hooks/set-state-in-effect
         setForm(prev => ({ ...prev, isAddService: true }));
       }
+
 
       const [b1, b2] = (booking.breakfast_package || "").split(",");
 
@@ -179,6 +220,12 @@ export default function BookingForm({ booking, onSuccess }) {
   }, [booking]);
 
 
+
+const paxMode = isEditMode ? "Total Pax" : "Additional Pax";
+const bookingFieldsetTitle = isEditMode ? "Booking Details" : "Booking & Guest Details";
+
+
+
   const addService = () => {
     if (!form.service_id) return;
 
@@ -195,6 +242,13 @@ export default function BookingForm({ booking, onSuccess }) {
 
 
 
+  const handleEarlyCheckInChange = (e) => {
+  setIsEarlyCheckIn(e.target.value);
+  if (e.target.value === 'false') {
+    setEarlyCheckIn(null);
+    setCheckIn(null);
+  }
+};
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -204,9 +258,216 @@ export default function BookingForm({ booking, onSuccess }) {
     if (name === "check_out") setCheckOut(value ? new Date(value) : null);
   };
  
+  const handleCheckInChange = (e) => {
+  if (!e.target.value) { setCheckIn(null); return; }
+  const date = new Date(e.target.value);
+  date.setHours(14, 0, 0, 0); // default 2:00 PM
+  setCheckIn(date);
+};
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleCheckOutChange = (e) => {
+  if (!e.target.value) { setCheckOut(null); return; }
+  const date = new Date(e.target.value);
+  date.setHours(12, 0, 0, 0); // default 12:00 PM
+  setCheckOut(date);
+};
+
+const isValidDate = (d) => d instanceof Date && !isNaN(d);
+
+  const handleSubmit = async (action) => {
+    action.preventDefault();
+
+    if(!isEditMode){
+      //new Booking
+      
+        // ── Validation ────────────────────────────────────────────────
+      // ✅ CORRECT
+      if (isEarlyCheckIn === 'Yes') {
+        if (!isValidDate(earlyCheckIn)) {
+          toast.warning("Please select an early check-in date and time");
+          return;
+        }
+        if (!isValidDate(checkOut)) {
+          toast.warning("Please select a check-out date");
+          return;
+        }
+        if (earlyCheckIn < now) {
+          toast.warning("Early check-in date cannot be in the past");
+          return;
+        }
+          // ✅ must be before 2PM
+        if (earlyCheckIn.getHours() >= 14) {
+          toast.warning("Early check-in must be before 2:00 PM");
+          return;
+        }
+        // ✅  must be 12AM or later (no overnight early check-in)
+        if (earlyCheckIn.getHours() < 0) {
+          toast.warning("Early check-in time is invalid");
+          return;
+        }
+      
+      
+        if (checkOut <= earlyCheckIn) {
+          toast.warning("Check-out must be after early check-in");
+          return;
+        }
+      }
+        if(isEarlyCheckIn === 'No'){
+            if (!checkIn || !checkOut) {
+              toast.warning("Please select check-in and check-out dates");
+              return;
+            }
+      
+            if (checkIn < now) {
+              toast.warning("Check-in date cannot be in the past");
+              return;
+            }
+      
+            if (checkOut <= checkIn) {
+              toast.warning("Check-out date must be after check-in date");
+              return;
+            }
+        }
+        if (!form.room_type) {
+          toast.warning("Please select a room type");
+          return;
+        }      
+        if (!form.room_id) {
+          toast.warning("Please select a room");
+          return;
+        }  
+        if (!form.name) {
+          toast.warning("Please enter guest name");
+          return;
+        }      
+        if (!form.phone) {
+          toast.warning("Please enter phone number");
+          return;
+        }  
+        const paymentValue = parseFloat(form.payment) || 0;
+        if (action === "paynow" && paymentValue < requiredDeposit) {
+          toast.warning(`Deposit must be at least ₱${requiredDeposit.toFixed(2)}`);
+          return;
+        }
+        if (action === "paynow" && !form.payment_method) {
+          toast.warning("Please select a payment method");
+          return;
+        }
+        // ── Confirmation dialog (paynow only) ─────────────────────────
+        if (action === "paynow") {
+          const confirmed = window.confirm("Are you sure you want to proceed to payment?");
+          if (!confirmed) return;
+        }
+      
+        // ── All checks passed — create booking ────────────────────────
+        setLoading(true);
+      
+        try {
+          // 1. Prepare base booking and guest data
+          const bookingData = {
+            room_id: parseInt(form.room_id),
+            name: form.name,
+            email: form.email || null,
+            phone: form.phone,
+            address: form.address || null,
+            check_in:   moment(checkIn).format("YYYY-MM-DD HH:mm"),
+            check_out:  moment(checkOut).format("YYYY-MM-DD HH:mm"),
+            total_pax:  Number(selectedRoom.room_capacity || 0) + Number(form.additionalPax || 0),
+            booking_status: action === "paylater" ? "pending" : "confirmed",
+          };
+      
+          // 2. Prepare invoice data (Server uses internal ID, so no booking_id needed here)
+          const invoiceData = {
+            room_charge:           bookingTotal,
+            custom_charge_name:    form.chargeName || null,
+            custom_charge:         customCharge || 0,
+            additional_pax:        Number(form.additionalPax || 0),
+            additional_pax_charge: addPaxTotalPrice,
+            breakfast_package:     [form.breakfast1, form.breakfast2].filter(Boolean).join(", ") || null,
+            early_checkin_fee: earlyCheckInFee,
+            subtotal:            subTotal,
+            discount:         parseFloat(form.discount || 0),
+            grandtotal:          grandTotal,
+            amount_paid:           action === "paylater" ? 0 : paymentValue,
+            balance:              Number(balance.toFixed(2) ),
+            invoice_status:        action === "paylater"
+                                     ? "unpaid"
+                                     : form.paymentType === "fullpayment" ? "paid" : "partial",
+            services_charge: totalServices,
+            services: selectedServices.map(s => ({
+              name: s.name,
+              price: s.price,
+            })),
+      
+      
+          };
+      
+          // 3. Prepare payment data
+          let paymentData = null;
+      
+          if (action === "paynow") {
+            paymentData = {
+              amount:           paymentValue,
+              payment_method:   form.payment_method   || null,
+              reference_number: form.reference_number || null,
+              payment_date:     new Date().toISOString(),
+              notes:            form.notes            || null,
+              payment_type:     form.paymentType,
+              payment_status:   form.paymentType === "fullpayment" ? "paid" : "partial",
+            };
+          } else {
+            paymentData = {
+              amount:           grandTotal,
+              payment_method:   null,
+              reference_number: null,
+              payment_date:     null,
+              notes:            form.notes || null,
+              payment_type:     null,
+              payment_status:   "unpaid",
+            };
+          }
+      
+          // 4. Combine and send everything in ONE request
+          const fullBookingData = {
+            ...bookingData,
+            invoice: invoiceData,
+            payment: paymentData,
+            action: action,
+            paymentType: form.paymentType,
+            paymentValue: paymentValue,
+            grandTotal: grandTotal,
+            requiredDeposit: requiredDeposit
+          };
+          
+          console.log("Sending booking data:", fullBookingData); // Helpful for debugging
+      
+          await createBooking(fullBookingData); // Send combined data to the server
+        
+      
+          toast.success("Booking created successfully!");
+      
+          // ── Reset form ───────────────────────────────────────────────
+          setForm(initialForm);
+          setCheckIn(null);
+          setCheckOut(null);
+          setSelectedServices([]);
+      
+        } catch (error) {
+          console.error("Error creating booking:", error);
+            const errorMessage =
+              error.response?.data?.message ||
+              error.response?.data?.error    ||
+              "Error creating booking";
+              toast.error(errorMessage);
+      
+        } finally {
+          setLoading(false);
+        }
+
+
+    }
+    else {
+
     setLoading(true);
     setError(null);
 
@@ -220,6 +481,7 @@ export default function BookingForm({ booking, onSuccess }) {
       toast.error(err.response?.data?.message || "Failed to update booking status")
     } finally {
       setLoading(false);
+    }
     }
   };
 
@@ -235,7 +497,7 @@ export default function BookingForm({ booking, onSuccess }) {
           <div className='flex-1'>
             {/* ── Booking Details ── */}
             <fieldset className="border rounded-xl p-5 mb-2">
-              <legend className="px-4 text-md">Booking Information</legend>
+              <legend className="px-4 text-md">{bookingFieldsetTitle}</legend>
 
 
               <div className="space-y-3">
@@ -246,9 +508,9 @@ export default function BookingForm({ booking, onSuccess }) {
                       type="datetime-local"
                       name="check_in"
                       value={form.check_in ? moment(form.check_in).format('YYYY-MM-DDTHH:mm') : ''}
-                      onChange={handleChange}
+                      onChange={handleCheckInChange}
                       required
-                      disabled={true}
+                      disabled={isEditMode}
                       className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500
                       disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                     />
@@ -260,29 +522,81 @@ export default function BookingForm({ booking, onSuccess }) {
                       type="datetime-local"
                       name="check_out"
                       value={form.check_out ? moment(form.check_out).format('YYYY-MM-DDTHH:mm') : ''}
-                      onChange={handleChange}
+                      onChange={handleCheckOutChange}
                       required
-                      disabled={true}
+                      disabled={isEditMode}
                       className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500
                       disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                     />
                   </div>
-                </div>
+          
+                       {/* Early Check In */}
+              <div className='text-sm flex justify-items-start items-center'>
+                <p className=' text-left font-medium'>Early Check In? </p>
+                <label className='px-4 py-2 cursor-pointer'>
+                  <input
+                    type="radio"
+                    name='isEarlyCheckIn'
+                    value='Yes'
+                    onChange={handleEarlyCheckInChange}
+                    checked={isEarlyCheckIn === "Yes"}
+                    
+                  
+                  />
+                  <span className='pl-2'>Yes</span>
+                </label>
 
-                <div className="flex gap-4">
+                <label className='px-4 py-2 cursor-pointer'>
+                  <input
+                    type="radio"
+                    name='isEarlyCheckIn'
+                    value='No'
+                    onChange={handleEarlyCheckInChange}
+                    checked={isEarlyCheckIn === "No"}
+                    
+                  />
+                  <span className='pl-2'>No</span>
+                </label>
+
+
+              </div>
+                        <div className='text-right'>
+                          <div className='flex justify-end items-center'>
+                            <span className='text-xs italic'>(₱500.00 per hour before 2PM)</span>
+                          </div>
+                              <input 
+                            name='earlyCheckIn'
+                           value={earlyCheckIn instanceof Date && !isNaN(earlyCheckIn) ? moment(earlyCheckIn).format('YYYY-MM-DDTHH:mm') : ''}
+                            onChange={(e => {
+                              if(!e.target.value) {setEarlyCheckIn(null); return;}
+                              const date = new Date(e.target.value);
+                              setEarlyCheckIn(date);
+                              setCheckIn(date);
+                            })}
+                            type="datetime-local"
+                            disabled={isEarlyCheckIn === "No"}
+                            min={moment().format('YYYY-MM-DDTHH:mm')}
+                            className='mb-4 w-full p-2 border rounded disabled:border-gray-400 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed '
+                            
+                            />  
+                        </div>
+
+                </div>
+                {isEditMode && (
+ <div className="flex gap-4">
                   <div className="flex-1">
-                    <label className="block text-left text-sm font-medium mb-1">Total Pax</label>
+                    <label className="block text-left text-sm font-medium mb-1">{paxMode}</label>
                     <input
                       type="number"
                       name="total_pax"
-                      value={form.total_pax}
+                      value={isEditMode ? form.total_pax :form.additionalPax }
                       onChange={handleChange}
                       min="0"
-                      disabled={true}
+                      disabled={isEditMode}
                       className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500
                       disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                     />
-                  </div>
+                  
 
                   <div className="flex-1">
                     {/* ✅ Fixed: was using booking.status (undefined), now booking_status */}
@@ -299,8 +613,40 @@ export default function BookingForm({ booking, onSuccess }) {
                       <option value="completed">Completed</option>
                     </select>
                   </div>
-                </div>
 
+              <div className='text-sm flex justify-items-start items-center'>
+                <p className=' text-left font-medium'>Extend? </p>
+                <label className='px-4 py-2 cursor-pointer'>
+                  <input
+                    type="radio"
+                    name='isExtend'
+                    value='Yes'
+                    //onChange={handleEarlyCheckInChange}
+                    checked={isExtend === "Yes"}
+                    
+                  
+                  />
+                  <span className='pl-2'>Yes</span>
+                </label>
+
+                <label className='px-4 py-2 cursor-pointer'>
+                  <input
+                    type="radio"
+                    name='isEarlyCheckIn'
+                    value='No'
+                    onChange={handleEarlyCheckInChange}
+                    checked={isEarlyCheckIn === "No"}
+                    
+                  />
+                  <span className='pl-2'>No</span>
+                </label>
+
+              </div>
+              </div>
+              </div>
+
+                  )}
+               
                 {/* Room Selection */}
                 <label
 
@@ -310,7 +656,7 @@ export default function BookingForm({ booking, onSuccess }) {
                   name="room_type"
                   value={form.room_type}
                   onChange={handleChange}
-                  disabled={true}
+                  disabled={isEditMode}
                   className="w-full mb-4 p-2 border rounded disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
 
                 >
@@ -324,11 +670,11 @@ export default function BookingForm({ booking, onSuccess }) {
                 </select>
 
                 <select
-                  name={form.room_id}
+                  name="room_id"
                   value={form.room_id}
                   onChange={handleChange}
                   className="w-full mb-4 p-2 border rounded disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
-                  disabled={true}
+                  disabled={isEditMode}
                 >
                   <option value="">Select Room</option>
                   {rooms
@@ -358,63 +704,60 @@ export default function BookingForm({ booking, onSuccess }) {
 
 
               </div>
+                  {/* Guest Info */}
+
+          <input
+              type="text"
+              name="name"
+              placeholder="Guest Name *"
+              value={form.name}
+              onChange={handleChange}
+              className="w-full mb-4 p-2 border rounded disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+              disabled = {isEditMode}
+              
+            />
+                        <input
+              type="tel"
+              name="phone"
+              placeholder="Phone Number *"
+              value={form.phone}
+              onChange={handleChange}
+              className="w-full mb-4 p-2 border rounded disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+              disabled = {isEditMode}
+             
+            />
+  {   
+        !isEditMode && (
+          <div>
+            <input
+              type="email"
+              name="email"
+              placeholder="Guest Email (optional)"
+              value={form.email}
+              onChange={handleChange}
+              className="w-full mb-4 p-2 border rounded"
+            />
+            
+           
+
+
+
+            <input
+              type="text"
+              name='address'
+              placeholder='Guest Address (optional)'
+              value={form.address}
+              onChange={handleChange}
+              className='w-full mb-4 p-2 border rounded'
+            />
+           </div>
+            )}
+
+
+
+
+
             </fieldset>
-            {/* 
-            <fieldset className="border rounded-xl p-4">
-              <legend className="px-4 text-md">Guest Information</legend>
-              <div>
-
-              </div>
-
-              <div>
-                <label className="block text-left text-sm font-medium mb-1">Guest Name *</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={form.name}
-                  onChange={handleChange}
-                  required
-                  className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
-                 disabled={true}
-                />
-              </div>
-
-              <div>
-                <label className="block text-left text-sm font-medium mb-1">Guest Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
-                   disabled={true}
-                />
-              </div>
-
-              <div>
-                <label className="block text-left text-sm font-medium mb-1">Phone Number *</label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={form.phone}
-                  onChange={handleChange}
-                  required
-                  className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-left text-sm font-medium mb-1">Address</label>
-                <input
-                  type="text"
-                  name="address"
-                  value={form.address}
-                  onChange={handleChange}
-                  className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
-              disabled={true}
-                />
-              </div>
-            </fieldset> */}
 
             {/* ── Other Service Details ── */}
             <fieldset className="border rounded-xl p-4">
@@ -431,7 +774,7 @@ export default function BookingForm({ booking, onSuccess }) {
                     onChange={handleChange}
                     placeholder='Name'
                     className='border w-full mb-1 p-2 rounded disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed'
-                    disabled={true}
+                    disabled={isEditMode}
                   />
                   <input
                     type="number"
@@ -441,7 +784,7 @@ export default function BookingForm({ booking, onSuccess }) {
                     placeholder='Price'
                     min='0'
                     className='border w-full mb-1 p-2 rounded disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed'
-                    disabled={true}
+                    disabled={isEditMode}
                   />
                 </div>
 
@@ -462,7 +805,7 @@ export default function BookingForm({ booking, onSuccess }) {
                         value={form.breakfast1}
                         onChange={handleChange}
                         className="w-full mb-1 p-2 border rounded disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
-                        disabled={true}
+                        disabled={isEditMode}
 
                       >
                         <option value="" >N/A</option>
@@ -485,7 +828,7 @@ export default function BookingForm({ booking, onSuccess }) {
                         value={form.breakfast1}
                         onChange={handleChange}
                         className="w-full mb-1 p-2 border rounded disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
-                        disabled={true}
+                        disabled={isEditMode}
                       >
                         <option value="" >N/A</option>
                         <option value="Sausage and Egg">Sausage and Egg</option>
@@ -502,7 +845,7 @@ export default function BookingForm({ booking, onSuccess }) {
                           value={form.breakfast2}
                           onChange={handleChange}
                           className="w-full mb-1 p-2 border rounded disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
-                          disabled={true}
+                          disabled={isEditMode}
 
                         >
                           <option value="" >N/A</option>
@@ -525,7 +868,7 @@ export default function BookingForm({ booking, onSuccess }) {
                       id='Yes'
                       name='isAddPax'
                       value={true}
-                      disabled={true}
+                      disabled={isEditMode}
                       onChange={handleChange}
                       checked={form.isAddPax === "true"}
 
@@ -539,7 +882,7 @@ export default function BookingForm({ booking, onSuccess }) {
                       id='No'
                       name='isAddPax'
                       value={false}
-                      disabled={true}
+                      disabled={isEditMode}
                       onChange={handleChange}
                       checked={!form.isAddPax || form.isAddPax === "false"}
 
@@ -555,7 +898,7 @@ export default function BookingForm({ booking, onSuccess }) {
                     value={form.additionalPax}
                     name="additionalPax"
                     min="0"
-                    disabled={true}
+                    disabled={form.isAddPax !== "true"}
                     className='w-full p-2 border rounded disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed'
 
                   />
@@ -573,7 +916,7 @@ export default function BookingForm({ booking, onSuccess }) {
                       name='isAddService'
                       value={true}
                       onChange={handleChange}
-                      disabled={true}
+                      disabled={isEditMode}
                       checked={form.isAddService === "true"}
 
                     />
@@ -587,7 +930,7 @@ export default function BookingForm({ booking, onSuccess }) {
                       name='isAddService'
                       value={false}
                       onChange={handleChange}
-                      disabled={true}
+                      disabled={isEditMode}
                       checked={!form.isAddService || form.isAddService === "false"}
 
                     />
@@ -621,7 +964,7 @@ export default function BookingForm({ booking, onSuccess }) {
                   <button
                     type='button'
                     onClick={addService}
-                    disabled={true}
+                    disabled={isEditMode}
                     className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed "
                   >Add</button>
 
@@ -654,7 +997,7 @@ export default function BookingForm({ booking, onSuccess }) {
                                     prev.filter((_, i) => i !== index)
                                   );
                                 }}
-                                disabled={true}
+                                disabled={isEditMode}
                                 className="px-2 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-700 disabled:bg-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed"
                               >
                                 Delete
@@ -677,7 +1020,13 @@ export default function BookingForm({ booking, onSuccess }) {
 
           </div>
           <div className='flex-1 inline-block'>
-            <fieldset className="border rounded-xl p-4 mb-2">
+            {(() => {
+              if (!isEditMode) return null;
+              
+              
+              return (
+                  <div>
+                                <fieldset className="border rounded-xl p-4 mb-2">
               <legend className="px-4 text-md">Invoice Status</legend>
 
               <h1 className={` text-[120px] text-center pb-2 font-medium  
@@ -689,6 +1038,10 @@ export default function BookingForm({ booking, onSuccess }) {
                 }
                 `}>--{form.invoice_status}--</h1>
             </fieldset>
+                  </div>
+                )
+            })()}
+
 
 
 
@@ -797,7 +1150,7 @@ export default function BookingForm({ booking, onSuccess }) {
                       name="discount"
                       value={form.discount}
                       onChange={handleChange}
-                      disabled={true}
+                      disabled={isEditMode}
                       className='w-full border p-2 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed'
                     >
                       <option value="0.00">No discount</option>
@@ -813,7 +1166,7 @@ export default function BookingForm({ booking, onSuccess }) {
                       name="payment_method"
                       value={form.payment_method}
                       onChange={handleChange}
-                      disabled={true}
+                      disabled={isEditMode}
                       className="w-full p-2   border rounded disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                     >
                       <option value="">Select Payment Method</option>
@@ -824,16 +1177,91 @@ export default function BookingForm({ booking, onSuccess }) {
                     </select>
                   </div>
 
+                  {!isEditMode && (
+                    <div>
+                        <div className='text-sm flex justify-items-start items-center'>
+                <p className='text-left font-medium'>Payment Type: </p>
+                <label className='p-4 cursor-pointer'>
+                  <input
+                    type="radio"
+                    id='fullpayment'
+                    name='paymentType'
+                    value='fullpayment'
+                    onChange={handleChange}
+                  />
+                  <span className='pl-2'>Full</span>
+                </label>
+
+                <label className='px-4 py-2 cursor-pointer'>
+                  <input
+                    type="radio"
+                    id='partialpayment'
+                    name='paymentType'
+                    value='partialpayment'
+                    onChange={handleChange}
+
+
+                  />
+                  <span className='pl-2'>Partial</span>
+                </label>
+
+
+              </div>
+
+                <div className='pb-14'>
+        
+                <input
+                  type="number"
+                  name='payment'
+                  placeholder='Deposit Must Be 50% of Total Price'
+                  value={form.payment}
+                  onChange={handleChange}
+                  min={(grandTotal * 0.5).toFixed(2)}
+                  max={grandTotal.toFixed(2)}
+                  step="0.01"
+                  className='w-full p-2 border rounded text-sm'
+                />
+                </div>
+                
+        <div className="flex justify-between items-center text-center flex-col gap-4 ">
+        {/* PROCEED TO PAY */}
+        <button
+          type="button"
+          disabled={loading}
+          onClick={() => handleSubmit("paynow")}
+          className="w-full bg-blue-700 text-white p-2 rounded-lg font-bold hover:bg-blue-400 transition disabled:bg-gray-400 "
+        >
+          {loading ? "Creating Booking..." : "Proceed to Payment"}
+        </button>
+        
+      
+          {/* PAYLATER BUTTON */}
+        <button
+          type="button"
+          disabled={loading}
+          onClick={() => handleSubmit("paylater")}
+          className="w-full  bg-slate-700 text-white p-2 rounded-lg font-bold hover:bg-slate-400 transition disabled:bg-gray-400 "
+        >
+          Pay Later
+        </button>
+
+        <button
+          type="button"
+          disabled={loading}
+          onClick={() => setForm(initialForm)}
+          className=" w-full border p-2 rounded-lg font-bold hover:bg-red-500 hover:text-white transition disabled:bg-gray-400"
+        >
+          Clear
+        </button>
+              </div>
+        </div>
+                    
+                  )}
+
 
 
                 </div>
 
-
-
-                <div>
-
-
-                </div>
               </div>
 
             </fieldset>

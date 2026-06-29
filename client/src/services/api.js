@@ -8,6 +8,7 @@ const API = axios.create(
 
 //Booking APIs
 export const getAllBookings = () => API.get("/booking");
+export const getBookingById = (id) => API.get(`/booking/${id}`);
 
 export const createBooking = (data) => API.post("/booking", data);
 

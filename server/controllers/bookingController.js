@@ -276,7 +276,7 @@ export const getAllBooking = async (req, res) => {
 };
 
 //get booking by ID
-export const getBookingByID = async (req, res) => {
+export const getBookingById = async (req, res) => {
 
     try {
         const { id } = req.params;

@@ -1,11 +1,11 @@
-import React from 'react'
+
 import { useEffect, useState } from "react";
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import { toast } from "react-toastify";
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { useNavigate } from "react-router-dom";
-import { getAllBookings } from "../services/api.js";
+import { getAllBookings, getBookingById } from "../services/api.js";
 
 import Modal from "../components/Modal.jsx";
 import BookingForm from '../components/BookingForm.jsx';
@@ -15,7 +15,6 @@ const localizer = momentLocalizer(moment);
 export default function Availability() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const [currentDate, setCurrentDate] = useState(new Date());
   const [currentView, setCurrentView] = useState('month');
 
@@ -23,9 +22,7 @@ export default function Availability() {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [selectedDateRange, setSelectedDateRange] = useState(null);
 
-  useEffect(() => {
-    fetchBookings();
-  }, []);
+
 
 const navigate = useNavigate();
 const fetchBookings = async () => {
@@ -57,6 +54,10 @@ const fetchBookings = async () => {
   }
 }
 
+  useEffect(() => {
+    fetchBookings(); //eslint-disable-line react-hooks/set-state-in-effect
+  }, []);
+
   // Function to check if date is in the past
   const isPastDate = (date) => {
     const today = moment().startOf('day');
@@ -65,7 +66,8 @@ const fetchBookings = async () => {
   };
 
   // Single click on event (booking)
-  const handleEventClick = (event) => {
+  const handleEventClick = async (event) => {
+    const booking = await getBookingById(event.id);
      if (event.status === 'completed') {
     toast.info("This booking is already completed and cannot be edited.");
     return;
@@ -75,7 +77,7 @@ const fetchBookings = async () => {
     return;
   }
   console.log("Event clicked:", event);
-  setSelectedBooking(event);
+  setSelectedBooking(booking.data);
   setSelectedDateRange(null);
   setIsModalOpen(true);
 
@@ -107,7 +109,7 @@ const fetchBookings = async () => {
 
 
     const endDate = moment(selectedDate)
-    .add(12, 'hours')
+    .add(1, 'day')
     .hour(12)
     .minute(0)
     .second(0)
@@ -116,7 +118,7 @@ const fetchBookings = async () => {
 
     if(isPastDate(startDate))
     {
-      toast.error("Cannot create bookings for past dates. Please select a fututre date.");
+      toast.error("Cannot create bookings for past dates. Please select a future date.");
       return;
     }
 
@@ -287,6 +289,8 @@ const fetchBookings = async () => {
     setSelectedDateRange(null);
   };
 
+  
+
   if (loading) return <div className="p-6">Loading...</div>;
 
   return (
@@ -397,6 +401,7 @@ const fetchBookings = async () => {
       >
         <BookingForm
           booking={selectedBooking || selectedDateRange}
+          isEditMode={Boolean(selectedBooking?.id)}
           onSuccess={() => {
             handleCloseModal();
             fetchBookings();

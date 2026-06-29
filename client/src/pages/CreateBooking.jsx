@@ -159,39 +159,8 @@ const subTotal =
     }));
   };
 
-  //fetch rooms ---------------------------------------
-  useEffect(() => {
-    if (checkIn && checkOut) {
-      fetchRooms();
-    }
-  }, [checkIn, checkOut]);
 
-
-  //fetch services ---------------------------------------
-  useEffect(() => {
-    fetchServices();
-
-  }, [])
-
-  //fetch deposit ---------------------------------------
-  useEffect(() => {
-    if(grandTotal > 0)
-    {
-      setForm(prev =>({
-        ...prev,
-        payment: 
-          prev.paymentType === "fullpayment"
-          ? grandTotal.toFixed(2)
-          : prev.paymentType === "partialpayment"
-          ? requiredDeposit.toFixed(2)
-          : ""
-      }))
-
-    }
-  }, [grandTotal, requiredDeposit, form.paymentType]);
-
-
-
+    //fetch services ---------------------------------------
   const fetchServices = async () => {
     try {
       const serviceResult = await getAllServices();
@@ -200,7 +169,16 @@ const subTotal =
       console.error("Error fetching services:", error);
       toast.error("Failed to load services");
     }
-  }
+  };
+
+
+  useEffect(() => {
+    fetchServices(); //eslint-disable-line react-hooks/set-state-in-effect
+
+  }, [])
+
+
+  //fetch rooms ---------------------------------------
   const fetchRooms = async () => {
     if (!checkIn || !checkOut) return;
 
@@ -221,7 +199,39 @@ const subTotal =
       console.error("Error fetching rooms:", error);
       toast.error("Failed to load rooms");
     }
+  
   };
+
+  useEffect(() => {
+    if (checkIn && checkOut) {
+      fetchRooms(); //eslint-disable-line react-hooks/set-state-in-effect
+    }
+  }, [checkIn, checkOut]);
+
+
+
+
+
+  //fetch deposit ---------------------------------------
+  useEffect(() => {
+    if(grandTotal > 0)
+    {
+      setForm(prev =>({ //eslint-disable-line react-hooks/set-state-in-effect
+        ...prev,
+        payment: 
+          prev.paymentType === "fullpayment"
+          ? grandTotal.toFixed(2)
+          : prev.paymentType === "partialpayment"
+          ? requiredDeposit.toFixed(2)
+          : ""
+      }))
+
+    }
+  }, [grandTotal, requiredDeposit, form.paymentType]);
+
+
+
+  
 
   const handleCheckInChange = (e) => {
   if (!e.target.value) { setCheckIn(null); return; }
@@ -582,21 +592,6 @@ if (isEarlyCheckIn === 'Yes') {
                 ))}
 
             </select>
-            
-                  {selectedRoom && (
-            <div className="text-left mt-2">
-              <span className="block text-sm font-medium">
-                Room Description:
-              </span>
-              <p>{selectedRoom.room_description}</p>
-
-              <span className="block text-sm font-medium mt-2">
-                Room Pax:
-              </span>
-              <p>{selectedRoom.room_pax}</p>
-            </div>
-          )}
-
 
 
 

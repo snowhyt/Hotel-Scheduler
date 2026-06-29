@@ -1,6 +1,6 @@
 import express from "express";
 import {createBooking, getAllBooking, updateBookingStatus, 
-    getBookingsPerMonth, getMonthlyRevenue, getTopRooms, editBooking, deleteBooking, getBookingByID, autoCompletePastBookings} from "../controllers/bookingController.js";
+    getBookingsPerMonth, getMonthlyRevenue, getTopRooms, editBooking, deleteBooking, getBookingById, autoCompletePastBookings} from "../controllers/bookingController.js";
 import dotenv from "dotenv";
 dotenv.config();
 const router = express.Router();
@@ -23,7 +23,7 @@ router.get("/top-rooms", getTopRooms);
 
 
 // GET booking by ID
-router.get("/:id", getBookingByID);
+router.get("/:id", getBookingById);
 
 //PATCH update booking status
 router.patch("/:id/status", updateBookingStatus);

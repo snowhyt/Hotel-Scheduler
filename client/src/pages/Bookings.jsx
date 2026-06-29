@@ -1,3 +1,4 @@
+//Bookings 
 import { useEffect, useState } from "react";
 import ExcelModal from "../components/ExcelModal.jsx";
 import { getAllBookings, updateBookingStatus } from "../services/api.js";
@@ -21,9 +22,6 @@ export default function Bookings() {
 
   const [viewMode, setViewMode] = useState(false);
 
-  useEffect(() => {
-    fetchBookings();
-  }, []);
 
   const fetchBookings = async () => {
     try {
@@ -39,12 +37,18 @@ export default function Bookings() {
     }
   };
 
+    useEffect(() => {
+    fetchBookings(); // eslint-disable-line react-hooks/set-state-in-effect
+  }, []);
+
+
   // Update status
   const handleStatus = async (id, booking_status) => {
     try {
       await updateBookingStatus(id, booking_status);
       toast.success(`Booking ${booking_status} successfully`);
-      fetchBookings();
+      fetchBookings(); //eslint-disable-line react-hooks/set-state-in-effect
+  
     } catch (err) {
       console.error(err);
       toast.error(`Failed to ${booking_status} booking`);
@@ -90,6 +94,7 @@ export default function Bookings() {
   if (loading) return <div className="p-6">Loading...</div>;
 
   return (
+
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6">Bookings</h1>
 

@@ -20,6 +20,7 @@ export default function CreateBooking() {
   const [services, setServices] = useState([]);
   const [selectedServices, setSelectedServices] = useState([]);
   const [isEarlyCheckIn, setIsEarlyCheckIn] = useState('No');
+  const [customCharges, setCustomCharges] = useState([]);
 
   const initialForm = {
   room_id:          "",
@@ -63,7 +64,9 @@ const addPaxTotalPrice =
     ? (parseFloat(form.additionalPax) || 0) * 300
     : 0;
 
-const customCharge = parseFloat(form.chargePrice) || 0;
+const customCharge = customCharges.reduce((total, charge) => {
+  return total + (parseFloat(charge.price) || 0);
+}, 0);
 
 const selectedRoom = rooms.find(
   room => room.id === parseInt(form.room_id)
@@ -109,7 +112,27 @@ const subTotal =
   const balance = form.paymentType === "fullpayment" ? 0 : requiredPayment - parseFloat(form.payment || 0);
 
 
+const addCustomCharges = () => {
+  if(!form.chargeName || !form.chargePrice) {
+    toast.warning("Please provide both a name and price.");
+    return;
+  }
 
+  const newCharges = {
+    name: form.chargeName,
+    price: parseFloat(form.chargePrice)
+  };
+
+  //Add new charges to array
+  setCustomCharges(prev => [...prev, newCharges]);
+
+  setForm(prev => ({
+    ...prev,
+    chargeName: "",
+    chargePrice: ""
+  }));
+
+};
 
 
   const addService = () => {
@@ -360,7 +383,7 @@ if (isEarlyCheckIn === 'Yes') {
     // 2. Prepare invoice data (Server uses internal ID, so no booking_id needed here)
     const invoiceData = {
       room_charge:           bookingTotal,
-      custom_charge_name:    form.chargeName || null,
+      custom_charge_name:    customCharges.length < 0 ? customCharges.map(c => c.name).join(", ") : null,
       custom_charge:         customCharge || 0,
       additional_pax:        Number(form.additionalPax || 0),
       additional_pax_charge: addPaxTotalPrice,
@@ -553,6 +576,7 @@ if (isEarlyCheckIn === 'Yes') {
               
             >
               <option value="">Select Room Type</option>
+              <option value="Dome">Dome</option>
               <option value="Dormitory">Dormitory</option>
               <option value="Superior Double">Superior Double</option>
               <option value="Superior Room">Superior Room</option>
@@ -640,9 +664,9 @@ if (isEarlyCheckIn === 'Yes') {
           {/* other services details */}
           <fieldset className='border border-gray-600 p-6 rounded-2xl flex-1'>
             <legend className='px-4'>Other Service Details</legend>
-            <div>
+            <div className='text-sm'>
               <label className='block text-sm font-medium mb-1'>Custom Additional Charge</label>
-              <div className='text-left flex flex-col-2 gap-4'>
+              <div className=' text-left flex gap-4'>
 
                 <input
                   type="text"
@@ -650,7 +674,7 @@ if (isEarlyCheckIn === 'Yes') {
                   value={form.chargeName}
                   onChange={handleChange}
                   placeholder='Name'
-                  className='border w-full mb-1 p-2 rounded'
+                  className='border w-full  p-2 rounded'
                 />
 
                 <input
@@ -660,9 +684,53 @@ if (isEarlyCheckIn === 'Yes') {
                   onChange={handleChange}
                   placeholder='Price'
                   min='0'
-                  className='border w-full mb-1 p-2 rounded'
+                  className='border w-full  p-2 rounded'
                 />
-              </div>
+
+                <button
+                  type="button"
+                  onClick={addCustomCharges}
+                  className="px-4 py-1 bg-blue-500 text-white rounded hover:bg-blue-700"
+                >
+                  Add
+                </button>
+                 </div>
+                <div className="">
+                  {customCharges.length > 0 && (
+                    <div className="mt-4">
+                      <ul className="space-y-2">
+                        {customCharges.map((charge, index) => (
+                          <li
+                            key={index}
+                            className="flex justify-between items-center border rounded p-2"
+                          >
+                            <div>
+                              <p className="font-medium">{charge.name}</p>
+                              <p className="text-sm text-gray-500">
+                                ₱{charge.price.toFixed(2)}
+                              </p>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setCustomCharges(prev =>
+                                  prev.filter((_, i) => i !== index)
+                                );
+                              }}
+                              className="px-2 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-700"
+                            >
+                              Delete
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                      </div>
+                  )}
+
+
+                </div>
+             
 
               <div className='text-left pt-2'>
                 <p className="block text-sm font-medium mb-1">Complementary Breakfast: </p>
@@ -977,10 +1045,9 @@ if (isEarlyCheckIn === 'Yes') {
                   <span className='text-right font-medium flex-1'>₱{earlyCheckInFee.toLocaleString()}</span>
                 </div>
               )}
-
                 <div className='flex py-1'>
-                  <p className='text-left '>Custom Charge: {form.chargeName}</p>
-                  <span className='text-right flex-1 font-medium'>₱{form.chargePrice || 0}.00</span>
+                  <p className='text-left '>Custom Charge: {customCharges.length > 0 ? customCharges.map(c => c.name).join(", ") : "None"}</p>
+                  <span className='text-right flex-1 font-medium'>₱{customCharge.toLocaleString()}.00</span>
                 </div>
                 {form.isAddPax === "true" &&
                   (

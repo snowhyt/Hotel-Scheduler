@@ -61,45 +61,42 @@ const {
 };
 
 
-// GET /invoices
-export const getAllInvoice = async (req, res) => {
-    const client = await pool.connect();
+    // GET /invoices
+    export const getAllInvoice = async (req, res) => {
+        const client = await pool.connect();
 
-    try {
-        const result = await client.query(
-            `SELECT 
-                i.*,
-                b.check_in,
-                b.check_out,
-                b.booking_status,
-                r.room_number,
-                r.room_type,
-                g.name      AS guest_name,
-                g.email     AS guest_email,
-                g.phone     AS guest_phone
-            FROM invoices i
-            JOIN bookings b ON i.booking_id = b.id
-            JOIN rooms    r ON b.room_id    = r.id
-            JOIN guests   g ON b.guest_id   = g.id
-            WHERE i.is_void = FALSE
-            ORDER BY i.created_at DESC`
-        );
-        res.json(result.rows);   
-        res.status(200).json({
-            message: "Invoices fetched successfully",
-            data: result.rows
-        });
+        try {
+            const result = await client.query(
+                `SELECT 
+                    i.*,
+                    b.check_in,
+                    b.check_out,
+                    b.booking_status,
+                    r.room_number,
+                    r.room_type,
+                    g.name      AS guest_name,
+                    g.email     AS guest_email,
+                    g.phone     AS guest_phone
+                FROM invoices i
+                JOIN bookings b ON i.booking_id = b.id
+                JOIN rooms    r ON b.room_id    = r.id
+                JOIN guests   g ON b.guest_id   = g.id
+                WHERE i.is_void = FALSE
+                ORDER BY i.created_at DESC`
+            );
+            res.json(result.rows);   
 
-    } catch (error) {
-        console.error("Error in getAllInvoice:", error);
-        res.status(500).json({ 
-            message: "Failed to fetch invoices",
-            error: error.message 
-        });
-    } finally {
-        client.release();
-    }
-};
+
+        } catch (error) {
+            console.error("Error in getAllInvoice:", error);
+            res.status(500).json({ 
+                message: "Failed to fetch invoices",
+                error: error.message 
+            });
+        } finally {
+            client.release();
+        }
+    };
 
 
 // GET /invoices/:id

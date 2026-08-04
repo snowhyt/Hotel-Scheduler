@@ -1,0 +1,63 @@
+services:
+  postgres:
+    image: postgres:17
+
+    container_name: 2205_postgres
+
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE}
+
+    ports:
+      - "${DB_PORT}:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+      # Database schema
+      - ./server/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+
+      # Initial data
+      - ./server/database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
+
+  server:
+    build:
+      context: ./server
+
+    container_name: express_server
+
+    ports:
+      - "${PORT}:3000"
+
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+
+    env_file:
+      - .env
+
+    depends_on:
+      - postgres
+
+  client:
+    build:
+      context: ./client
+      
+
+    container_name: react_client
+
+    ports:
+      - "5173:5173"
+
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+
+    depends_on:
+      - server
+
+volumes:
+  postgres_data:

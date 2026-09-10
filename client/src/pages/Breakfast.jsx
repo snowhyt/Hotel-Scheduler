@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import API from "../services/api";
+import API from "../services/api.js";
 import RoomCard from "../components/RoomCard.jsx";
 import { deleteRoom } from "../services/api.js";
 import EditRoom from "./EditRoom.jsx";
@@ -128,13 +128,10 @@ const filteredRooms = rooms.filter((r) => {
       <h1 className="text-2xl font-bold mb-6">Rooms</h1>
 
       {/* ➕ ADD ROOM FORM */}
-      <div className="bg-white p-4 rounded-xl shadow mb-6">
-   <h2 className="font-bold pb-4">Create New Room</h2>
       <form
         onSubmit={handleSubmit}
-        className="flex gap-4 flex-wrap text-sm items-center"
+        className="bg-white p-4 rounded-xl shadow mb-6 flex gap-4 flex-wrap text-sm"
       >
-     
         <input
           type="number"
           name="room_number"
@@ -204,17 +201,15 @@ const filteredRooms = rooms.filter((r) => {
           Add Room
         </button>
       </form>
-      
-      </div>
 
       {/* Filtering UI */}
-      <div className="flex flex-col md:flex-row gap-4 mb-4 justify-end">
+      <div className="flex flex-col md:flex-row gap-4 mb-4">
         <input 
         type="text"
-        placeholder="Search e.g. room_number, status, room_type"
+        placeholder="Search"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="border p-2 rounded w-full md:w-1/3 bg-white"
+        className="border p-2 rounded w-full md:w-1/3"
         />
 
       </div>

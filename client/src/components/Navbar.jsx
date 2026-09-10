@@ -5,6 +5,8 @@ import BookingsIcon from "../assets/tabs.png";
 import SchedIcon from "../assets/agenda.png";
 import CalendarIcon from "../assets/schedule.png";
 import RoomIcon from "../assets/bed.png";
+import BreakfastIcon from "../assets/breakfast-icon.png";
+import ServicesIcon from "../assets/laundry.png";
 
 export default function Navbar() {
   return (
@@ -24,6 +26,21 @@ export default function Navbar() {
             </li>
           </Link>
           
+          <Link to="/create-booking">
+            <li className="hover:text-sky-400 py-6 pl-4 rounded transition-colors hover:bg-gray-700 flex flex-row items-center gap-4">
+              <img src={BookingsIcon} alt="bookings_icon" height="auto" width="30px" />
+              Create Booking
+            </li>
+            </Link>
+
+            
+          <Link to="/availability">
+            <li className="hover:text-sky-400 py-6 pl-4 rounded transition-colors hover:bg-gray-700 flex flex-row items-center gap-4">
+              <img src={CalendarIcon} alt="bookings_icon" height="auto" width="30px" />
+              Calendar
+            </li>
+          </Link>
+
           <Link to="/bookings">
             <li className="hover:text-sky-400 py-6 pl-4 rounded transition-colors hover:bg-gray-700 flex flex-row items-center gap-4">
               <img src={SchedIcon} alt="bookings_icon" height="auto" width="30px" />
@@ -31,12 +48,6 @@ export default function Navbar() {
             </li>
           </Link>
 
-          <Link to="/create-booking">
-            <li className="hover:text-sky-400 py-6 pl-4 rounded transition-colors hover:bg-gray-700 flex flex-row items-center gap-4">
-              <img src={BookingsIcon} alt="bookings_icon" height="auto" width="30px" />
-              Create Booking
-            </li>
-          </Link>
 
           <Link to="/rooms">
             <li className="hover:text-sky-400 py-6 pl-4 rounded transition-colors hover:bg-gray-700 flex flex-row items-center gap-4">
@@ -45,10 +56,17 @@ export default function Navbar() {
             </li>
           </Link>
 
-          <Link to="/availability">
+          <Link to="/services">
             <li className="hover:text-sky-400 py-6 pl-4 rounded transition-colors hover:bg-gray-700 flex flex-row items-center gap-4">
-              <img src={CalendarIcon} alt="bookings_icon" height="auto" width="30px" />
-              Availability
+              <img src={ServicesIcon} alt="bookings_icon" height="auto" width="30px" />
+              Hotel Services
+            </li>
+          </Link>
+
+          <Link to="/breakfast">
+            <li className="hover:text-sky-400 py-6 pl-4 rounded transition-colors hover:bg-gray-700 flex flex-row items-center gap-4">
+              <img src={BreakfastIcon} alt="bookings_icon" height="auto" width="30px" />
+              Breakfast
             </li>
           </Link>
 

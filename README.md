@@ -23,6 +23,10 @@
 
 # Build the project
     docker compose up --build
+    docker compose up -b
+    docker compose down
+    docker compose down -v
+    docker prune -v
 
   # Database Schema
  erDiagram

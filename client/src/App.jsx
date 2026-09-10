@@ -11,6 +11,8 @@ import EditBooking from './pages/EditBooking'
 import Rooms from './pages/Rooms'
 import Availability from './pages/Availability'
 import EditRoom from './pages/EditRoom'
+import Breakfast from './pages/Breakfast'
+import Services from './pages/Services'
 
 //components
 import Navbar from './components/Navbar'
@@ -31,6 +33,8 @@ function App() {
             <Route path="/rooms" element={<Rooms />} />
             <Route path="/availability" element={<Availability />} />
             <Route path="/rooms/edit/:id" element={<EditRoom />} />
+            <Route path="/breakfast" element={<Breakfast/>} />
+            <Route path="/services" element={<Services/>} />
           </Routes>
         </div>
       </div>
